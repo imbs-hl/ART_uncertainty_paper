@@ -1,5 +1,5 @@
 calculate_art_uncertainty <- function(data, instance, metric, imp.num.var, probs_quantiles, epsilon, min.bucket = 0, 
-                                      num.splits = NULL, significance_level = 0.1, calibrate_all_nodes = FALSE, ...){
+                                      num.splits = NULL, significance_level = 0.1, ...){
 
   
   # Exctract data from instance 
@@ -98,7 +98,6 @@ calculate_art_uncertainty <- function(data, instance, metric, imp.num.var, probs
                     min.bucket_art       = min.bucket,
                     num.splits           = paste0(num.splits, collapse = ","),
                     significance_level   = significance_level,
-                    calibrate_all_nodes  = calibrate_all_nodes,
                     mean_error_calibration                  = mean_error_calibration,
                     mean_error_mondrian_calibration         = mean_error_mondrian_calibration,
                     mean_interval_size_mondrian_calibration = mean_interval_size_mondrian_calibration,

@@ -1,0 +1,13 @@
+### [bt]: This is batchtools v0.9.17
+### [bt]: Starting calculation of 1 jobs
+### [bt]: Setting working directory to '/Users/kronziel/mywork/diss/ART_uncertainty/R/paper_code/ART_uncertainty_paper'
+### [bt]: Memory measurement disabled
+### [bt]: Starting job [batchtools job.id=35]
+### [bt]: Generating problem instance for problem 'simulate_setting_1' ...
+Warning in ranger(y ~ ., data = train_dat, mtry = mtry, num.trees = num.trees,  :
+  Unused arguments: job
+### [bt]: Applying algorithm 'art_uncertainty' on problem 'simulate_setting_1' for job 35 (seed = 10255) ...
+You provided a test data set for a distance measure by splitting variables. This is not necessary and will be ignored.
+
+### [bt]: Job terminated successfully [batchtools job.id=35]
+### [bt]: Calculation finished!

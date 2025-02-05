@@ -1,0 +1,15 @@
+### [bt]: This is batchtools v0.9.17
+### [bt]: Starting calculation of 1 jobs
+### [bt]: Setting working directory to '/Users/kronziel/mywork/diss/ART_uncertainty/R/paper_code/ART_uncertainty_paper'
+### [bt]: Memory measurement disabled
+### [bt]: Starting job [batchtools job.id=3]
+### [bt]: Generating problem instance for problem 'simulate_benchmark_data' ...
+Task '233215' file 'task.xml' found in cache.
+Task '233215' file 'datasplits.arff' found in cache.
+Data '42570' file 'description.xml' found in cache.
+Data '42570' file 'dataset.arff' found in cache.
+[1mindexing[0m [34mfilef738f2ba6b4[0m [=======================================================---------------------------------] [32m145.12GB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mfilef738f2ba6b4[0m [========================================================================================] [32m370.75MB/s[0m, eta: [36m 0s[0m                                                                                                                                                                           [1mindexed[0m [32m0B[0m in [36m 0s[0m, [32m0B/s[0m[1mindexed[0m [32m1.00TB[0m in [36m 0s[0m, [32m135.12TB/s[0m                                                                                                                                      ### [bt]: Applying algorithm 'artificial_rep_tree' on problem 'simulate_benchmark_data' for job 3 (seed = 5917) ...
+You provided a test data set for a distance measure by splitting variables. This is not necessary and will be ignored.
+
+### [bt]: Job terminated successfully [batchtools job.id=3]
+### [bt]: Calculation finished!

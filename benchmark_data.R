@@ -39,6 +39,7 @@ pacman::p_load(dplyr)
 pacman::p_load(OpenML)
 pacman::p_load(foreign)
 pacman::p_load(caret)
+pacman::p_load(farff)
 
 if("timbR" %in% installed.packages()){
   library(timbR)

@@ -50,7 +50,7 @@ simulate_benchmark_data <- function(data, sim_id, current_fold, num_folds, num.t
   # split data in train, calibration and test data with 7x cross validation
   # create folds for cv
   set.seed(sim_id)
-  folds <- createFolds(dat_na_free[,target_variable], k = num_folds, list = TRUE, returnTrain = TRUE)
+  folds <- createFolds(dat_na_free[,target_variable], k = num_folds, list = TRUE, returnTrain = FALSE)
   
   # get current fold ids and separate data
   current_fold_ids <- folds[[current_fold]]

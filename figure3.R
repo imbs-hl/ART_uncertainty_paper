@@ -40,7 +40,7 @@ pacman::p_load(reshape2)
 # Load and prepare data
 
 # Data produced by simulations.R
- results <- readRDS(file.path(proc_dir, "results_benchmark.Rds")) %>% bind_rows()
+results <- readRDS(file.path(proc_dir, "results_benchmark.Rds")) %>% bind_rows()
 
 # Change names and calculate confidence level in percent as (1 - significance level)*100 and coverage as 1 - error
 results <- results  %>% 

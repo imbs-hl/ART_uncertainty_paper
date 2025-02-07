@@ -37,10 +37,9 @@ pacman::p_load(tidyr)
 
 
 if("timbR" %in% installed.packages()){
-  message("Please check which branch is installed, you need 'develop'")
   library(timbR)
 } else {
-  devtools::install_github("imbs-hl/timbR", "develop")
+  devtools::install_github("imbs-hl/timbR", "master")
   library(timbR)
 }
 
@@ -123,7 +122,7 @@ tree_info_conformal_pred <- tree_info %>% left_join(unique(calibrated_prediction
 
 plot_tree(tree_info_df = tree_info_conformal_pred, train_data_df = train_dat, test_data_df = test_dat, rf_list = rf_rep, 
           tree_number = 1,  dependent_var = "y",
-          show_sample_size = FALSE, show_prediction_nodes = FALSE, show_uncertainty = TRUE, show_coverage = TRUE,
+          show_sample_size = FALSE, show_prediction_nodes = FALSE, show_uncertainty = TRUE, show_coverage = TRUE, show_intervalwidth = TRUE,
           vert_sep = 5, hor_sep = 5,
           work_dir = out_dir, plot_name = "fig1a_tree_scenario1_conformal_prediction", colors = NULL)
 
@@ -148,7 +147,7 @@ tree_info_conformal_mondrian_pred <- tree_info %>% left_join(unique(calibrated_m
 
 plot_tree(tree_info_df = tree_info_conformal_mondrian_pred, train_data_df = train_dat, test_data_df = test_dat, rf_list = rf_rep, tree_number = 1, 
           dependent_var = "y",
-          show_sample_size = FALSE, show_prediction_nodes = FALSE, show_uncertainty = TRUE, show_coverage = TRUE,
+          show_sample_size = FALSE, show_prediction_nodes = FALSE, show_uncertainty = TRUE, show_coverage = TRUE, show_intervalwidth = TRUE,
           vert_sep = 5, hor_sep = 5,
           work_dir = out_dir, plot_name = "fig1b_tree_scenario1_conformal_mondrian_prediction", colors = NULL)
 

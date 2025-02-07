@@ -37,10 +37,9 @@ pacman::p_load(rpart)
 pacman::p_load(dplyr)
 
 if("timbR" %in% installed.packages()){
-  message("Please check which branch is installed, you need 'develop'")
   library(timbR)
 } else {
-  devtools::install_github("imbs-hl/timbR", "develop")
+  devtools::install_github("imbs-hl/timbR", "master")
   library(timbR)
 }
 

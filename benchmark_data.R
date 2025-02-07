@@ -44,7 +44,7 @@ pacman::p_load(farff)
 if("timbR" %in% installed.packages()){
   library(timbR)
 } else {
-  devtools::install_github("imbs-hl/timbR", "develop")
+  devtools::install_github("imbs-hl/timbR", "master")
   library(timbR)
 }
 

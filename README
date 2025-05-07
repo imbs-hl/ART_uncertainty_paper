@@ -6,4 +6,6 @@ To run the benchmark evaluation, please first open benchmark_data.R in RStudio. 
 
 The scripts figure1.R, figure2.R, ... and figure6.R can be used to reproduce the figures 1 - 6 from the paper. You can choose if you want to build the figures from you self calculated data or to import the precalculated simulation and benchmark data from the paper, which you can find in the proc folder. 
 
+To clone this repository, use: git clone git@github.com:imbs-hl/ART_uncertainty_paper
+
 For any issues or questions please contact me by l.kronziel[at]uni-luebeck.de.

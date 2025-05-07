@@ -1,6 +1,6 @@
-#' With this script the figure 2 from Kronziel et al. "Increasing the 
-#' explainability of artificial representative trees through conformal 
-#' prediction to quantify uncertainty" can be reproduced. 
+#' With this script the figure 2 from Kronziel et al. "Uncertainty 
+#' quantification enhances the explainability of 
+#' artificial representative trees" can be reproduced. 
 #' Given a simulated data set. Run simulations.R to get such a data set. 
 #' With the standard parameters in simulations.R, only the part for 
 #' data scenario 1 is reproduced using less significance levels and repetitions 
@@ -35,90 +35,207 @@ pacman::p_load(rpart)
 pacman::p_load(dplyr)
 pacman::p_load(tidyr)
 pacman::p_load(reshape2)
+pacman::p_load(cowplot)
+
+
+if("timbR" %in% installed.packages()){
+  library(timbR)
+  warning("Please check, if timbR version 3.1 is installed.")
+} else {
+  devtools::install_github("imbs-hl/timbR", "master")
+  library(timbR)
+}
 
 #---------------------------------------
-# Load and prepare data
-# Data from publication
-# min.bucket 25 and 100 were simulated and 100 was used for figures
-results <- read.csv2(file.path(proc_dir, "results_simulations.csv")) %>% 
-  filter(min.bucket_art == 100) 
-
-# Data produced by simulations.R
- results <- readRDS(file.path(proc_dir, "results.Rds")) %>% bind_rows()
-
-# Change names and calculate confidence level in percent as (1 - significance level)*100 and coverage as 1 - error
-results <- results  %>% 
-  mutate(scenario = case_when(setting == "Setting 1" ~ "large effects",
-                              setting == "Setting 2" ~ "small effects",
-                              setting == "Setting 3" ~ "correlations",
-                              setting == "Setting 4" ~ "interactions",
-                              setting == "Setting 5" ~ "continuous variables"),
-         scenario = factor(scenario, 
-                           levels = c("large effects", "small effects", "correlations", "interactions", "continuous variables"), 
-                           labels = c("large effects", "small effects", "correlations", "interactions", "continuous \nvariables")),
-         confidence_level = (1 - significance_level)*100,
-         coverage_icp = 100-mean_error_calibration,
-         coverage_mondrian_icp = 100-mean_error_mondrian_calibration)
+# Functions to simulate the data sets
+source("functions/simulate_rf_setting_1.R")
 
 #---------------------------------------
-# Plot data from figure 2A and save plot
+# Figure 2 
+#---------------------------------------
 
-# Aggregate meausures from repetitions using mean
-marginal_coverage_mondrian_icp <- aggregate(coverage_mondrian_icp ~ confidence_level + scenario + min.bucket_art, results, function(x) c(mean_error = mean(x)))
-marginal_coverage_icp <- aggregate(coverage_icp ~ confidence_level + scenario + min.bucket_art, results, function(x) c(mean_error = mean(x)))
+set.seed(123)
+# Simmulate data
+instance = simulate_rf_setting_1(data = 1000, n_test = 1000, n_cal = 1000, p = 100, p_eff = 5, beta_eff = 2, eps = 1, num.trees = 500, mtry = 10, min_node_size = 100)
 
-# Transform data in long format
-plot_figure2a <- left_join(marginal_coverage_mondrian_icp, marginal_coverage_icp) %>% 
-  melt(id=c("scenario", "confidence_level", "min.bucket_art")) %>% 
-  mutate(variable = ifelse(variable == "coverage_icp", "ICP", "Mondrian ICP"))
+# Exctract data from instance 
+test_dat       <- instance[[1]]
+rf             <- instance[[2]]
+params         <- instance[[3]]
+cal_dat        <- instance[[4]]
+effect_var_ids <- instance[[5]]
+noise_var_ids  <- instance[[6]]
+train_dat      <- instance[[7]]
+dependent_varname <- instance[[8]]
 
+# Create ART 
+rf_rep <- generate_tree(rf = rf, metric = "weighted splitting variables", test_data = test_dat, train_data = train_dat, 
+                        importance.mode = TRUE, imp.num.var = 5, dependent_varname = dependent_varname,
+                        probs_quantiles = NULL, epsilon = 0.05,
+                        min.bucket = 100, num.splits = NULL)
 
-ggplot(plot_figure2a, aes(x = confidence_level, y = value, col = scenario, group = scenario))+
-  facet_grid(variable~.)+
-  theme_bw()+
-  geom_line()+
-  geom_abline(slope = 1, linetype = "dashed", intercept = 0)+
-  labs(x = "Confidence level (%)",
-       y = "Marginal Coverage (%)",
-       col = "Simulation scenarios") +
-  theme(text = element_text(size = 15), legend.position = "right",
-        legend.text = element_text(size = 14),
-        legend.title = element_text(size = 14),
-        legend.key.size = unit(0.6, 'cm'),
-        strip.text.y = element_text(size = 18))
+# Calculate predictions for calidation and test data
+y_cal <- cal_dat[,dependent_varname]
+y_test <- test_dat[,dependent_varname]
+y_cal_pred <- predict(rf_rep, cal_dat)$predictions
+y_test_pred <- predict(rf_rep, test_dat)$predictions
 
-# save plot
-ggsave(file.path(out_dir, "fig2A_averaged_coverage.png"), units = "cm", width = 20, height = 8)
+# Calculate conformal predictive system (CPS)
+# Select random index of test observation
+idx_test <- sample(c(1:length(y_test)), 1)
 
+cpd <- y_test_pred[idx_test] + sort(y_cal_pred - y_cal)
+
+p <- seq(0, 1 - 1/length(cpd), length.out = length(cpd))  
+
+data_cps <- data.frame(cpd = cpd, p = p)
+
+# For two tailed
+lower_index <- tail(which(p <= 0.025), 1)
+upper_index <- which(p >= 0.975)[1]
+
+low_percentile <- cpd[lower_index]
+high_percentile <- cpd[upper_index]
+
+# Median
+mid_index <- which(p >= 0.5)[1]
+median <- cpd[mid_index]
+
+# For one tailed
+lower_index2 <- tail(which(p <= 0.05), 1)
+upper_index2 <- which(p >= 0.95)[1]
+
+low_percentile2 <- cpd[lower_index2]
+high_percentile2 <- cpd[upper_index2]
 
 #---------------------------------------
-# Plot data from figure 2B and save plot
+# Plot distribution
+#---------------------------------------
+plt_two_tailed <- ggplot() +
+  theme_bw() +
+  geom_line(data = data_cps, aes(x = cpd, y = p))  +
+  geom_segment(aes(x = y_test_pred[idx_test], y = 0, yend = 1, color = "prediction", linetype = "prediction")) +
+  geom_segment(aes(x = y_test[idx_test], y = 0, yend = 1, color = "y", linetype = "y")) +
+  geom_area(data = data_cps %>% filter(cpd >= low_percentile & cpd <= high_percentile),
+            aes(x = cpd, y = p), fill = "red", alpha = 0.09) +
+  xlab("y") +
+  ylab("Q(y)") +
+  ylim(0, 1) +
+  geom_segment(aes(x = median, y = 0, yend = 1, color = "median", linetype = "median"), show.legend = TRUE) +
+  geom_segment(aes(x = min(cpd), xend = 0.4, y = 0.79, color="P(y)≤0.4", linetype = "P(y)≤0.4"), show.legend = TRUE) +
+  geom_segment(aes(x = 0.4, y = 0, yend = 0.79, color="P(y)≤0.4", linetype = "P(y)≤0.4"), show.legend = TRUE) +
+  geom_segment(aes(x = low_percentile, y = 0, yend = p[lower_index], color="95% prediction interval", linetype="95% prediction interval"), show.legend = TRUE) +
+  geom_segment(aes(x = high_percentile, y = 0, yend = p[upper_index], color="95% prediction interval", linetype="95% prediction interval"), show.legend = TRUE) +
+  theme(text = element_text(size = 15), legend.position = "none",
+        legend.text = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        legend.key.size = unit(0.6, 'cm'))+
+  labs(color = "")+
+  scale_color_manual(name = "",
+                     values=c(rgb(228,32,50, maxColorValue = 255),
+                              rgb(236,116,4, maxColorValue = 255),
+                              "black", 
+                              rgb(149,188,14, maxColorValue = 255),
+                              #rgb(0,174,199, maxColorValue = 255),
+                              rgb(0,106,163, maxColorValue = 255)))+
+  scale_linetype_manual(name = "",values=c(1,1,2,1,1))+
+  labs(color = "", linetype = "")
 
-# Aggregate meausures from repetitions using mean
-interval_width_mondrian_icp <- aggregate(mean_interval_size_mondrian_calibration ~ confidence_level + scenario + min.bucket_art, results, function(x) c(mean_error = mean(x)))
-interval_width_icp <- aggregate(mean_interval_size_calibration ~ confidence_level + scenario + min.bucket_art, results, function(x) c(mean_error = mean(x)))
+plt_two_tailed
 
-# Transform data in long format
-plot_figure2b <- left_join(interval_width_mondrian_icp, interval_width_icp) %>% 
-  melt(id=c("scenario", "confidence_level", "min.bucket_art")) %>% 
-  mutate(variable = ifelse(variable == "mean_interval_size_calibration", "ICP", "Mondrian ICP"))
+plt_left_tailed <- ggplot() +
+  theme_bw() +
+  geom_line(data = data_cps, aes(x = cpd, y = p))  +
+  geom_segment(aes(x = y_test_pred[idx_test], y = 0, yend = 1, color = "prediction")) +
+  geom_segment(aes(x = y_test[idx_test], y = 0, yend = 1, color = "y")) +
+  geom_area(data = data_cps %>% filter(cpd <= high_percentile2),
+            aes(x = cpd, y = p), fill = "red", alpha = 0.09) +
+  xlab("y") +
+  ylab("Q(y)") +
+  ylim(0, 1) +
+  xlim(min(cpd), max(cpd)) +
+  geom_segment(aes(x = median, y = 0, yend = 1, color = "median"), show.legend = TRUE) +
+  geom_segment(aes(x = high_percentile2, y = 0, yend = p[upper_index2], color="95% prediction interval"), show.legend = TRUE) +
+  geom_segment(aes(x = min(cpd), xend = 0.4, y = 0.79, color="P(y)≤0.4"), linetype = "dashed", show.legend = TRUE) +
+  geom_segment(aes(x = 0.4, y = 0, yend = 0.79, color="P(y)≤0.4"), linetype = "dashed", show.legend = TRUE) +
+  theme(text = element_text(size = 15), legend.position = "none",
+        legend.text = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        legend.key.size = unit(0.6, 'cm'))+
+  labs(color = "")+
+  scale_color_manual(name = "",
+                     values=c(rgb(228,32,50, maxColorValue = 255),
+                              rgb(236,116,4, maxColorValue = 255),
+                              "black", 
+                              rgb(149,188,14, maxColorValue = 255),
+                              #rgb(0,174,199, maxColorValue = 255),
+                              rgb(0,106,163, maxColorValue = 255)))+
+  scale_linetype_manual(name = "",values=c(1,1,2,1,1))+
+  labs(color = "", linetype = "")
+
+plt_left_tailed
+
+plt_right_tailed <- ggplot() +
+  theme_bw() +
+  geom_line(data = data_cps, aes(x = cpd, y = p))  +
+  geom_segment(aes(x = y_test_pred[idx_test], y = 0, yend = 1,color = "prediction", linetype = "prediction")) +
+  geom_segment(aes(x = y_test[idx_test], y = 0, yend = 1, color = "y", linetype = "y")) +
+  geom_area(data = data_cps %>% filter(cpd >= low_percentile2),
+            aes(x = cpd, y = p), fill = "red", alpha = 0.09) +
+  xlab("y") +
+  ylab("Q(y)") +
+  ylim(0, 1) +
+  xlim(min(cpd), max(cpd)) +
+  geom_segment(aes(x = median, y = 0, yend = 1, color = "median", linetype = "median"), show.legend = TRUE) +
+  geom_segment(aes(x = low_percentile2, y = 0, yend = p[lower_index2], color="95% prediction interval", linetype="95% prediction interval"), show.legend = TRUE) +
+  geom_segment(aes(x = min(cpd), xend = 0.4, y = 0.79, color="P(y)≤0.4", linetype="P(y)≤0.4"), show.legend = TRUE) +
+  geom_segment(aes(x = 0.4, y = 0, yend = 0.79, color="P(y)≤0.4", linetype="P(y)≤0.4"), show.legend = TRUE) +
+  theme(text = element_text(size = 15), legend.position = "bottom",
+        legend.text = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        legend.key.size = unit(0.6, 'cm'))+
+  scale_color_manual(name = "",
+                     values=c(rgb(228,32,50, maxColorValue = 255),
+                              rgb(236,116,4, maxColorValue = 255),
+                              "black", 
+                              rgb(149,188,14, maxColorValue = 255),
+                              #rgb(0,174,199, maxColorValue = 255),
+                              rgb(0,106,163, maxColorValue = 255)))+
+  scale_linetype_manual(name = "",values=c(1,1,2,1,1))+
+  labs(color = "", linetype = "")
+
+plt_right_tailed
 
 
-ggplot(plot_figure2b, aes(x=confidence_level, y=value, col = scenario, group = scenario))+
-  facet_grid(variable~.)+
-  theme_bw()+
-  geom_line()+
-  labs(x = "Confidence level (%)",
-       y = "Interval width",
-       col = "Simulation scenarios") +
-  theme(text = element_text(size = 15), legend.position = "right",
-        legend.text = element_text(size = 14),
-        legend.title = element_text(size = 14),
-        legend.key.size = unit(0.6, 'cm'),
-        strip.text.y = element_text(size = 18))
+# Combine plots
+plots_row <- plot_grid(plt_left_tailed, 
+                       plt_two_tailed, 
+                       plt_right_tailed + theme(legend.position = "none"), 
+                       nrow = 1, align = "hv",
+                       labels = c("A", "B", "C"))
 
-# save plot
-ggsave(file.path(out_dir, "fig2B_averaged_intervalwidth.png"), units = "cm", width = 20, height = 8)
+# Get legend (copied from https://github.com/wilkelab/cowplot/issues/202)
+get_legend <- function(plot) {
+  # return all legend candidates
+  legends <- get_plot_component(plot, "guide-box", return_all = TRUE)
+  # find non-zero legends
+  nonzero <- vapply(legends, \(x) !inherits(x, "zeroGrob"), TRUE)
+  idx <- which(nonzero)
+  # return first non-zero legend if exists, and otherwise first element (which will be a zeroGrob) 
+  if (length(idx) > 0) {
+    return(legends[[idx[1]]])
+  } else {
+    return(legends[[1]])
+  }
+}
+legend_tailed <- get_legend(plt_right_tailed)
+
+# Add legend underneath
+final_plot <- plot_grid(plots_row, legend_tailed, ncol = 1, rel_heights = c(1, 0.1))
+
+final_plot
+
+ggsave(final_plot, filename = file.path(out_dir, "fig2_simulation_cps_all_tailed.png"), width = 20, height = 6, units = "cm", dpi = 200)
 
 
 

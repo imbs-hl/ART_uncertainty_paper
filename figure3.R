@@ -1,9 +1,9 @@
-#' With this script the figure 3 from Kronziel et al. "Increasing the 
-#' explainability of artificial representative trees through conformal 
-#' prediction to quantify uncertainty" can be reproduced. 
-#' Given a benchmark data set. Run benchmark_data.R to get such a data set. 
-#' With the standard parameters in benchmark_data.R, only the part for 
-#' one benchmark data set is reproduced using less significance levels and repetitions 
+#' With this script the figure 3 from Kronziel et al. "Uncertainty 
+#' quantification enhances the explainability of 
+#' artificial representative trees" can be reproduced. 
+#' Given a simulated data set. Run simulations.R to get such a data set. 
+#' With the standard parameters in simulations.R, only the part for 
+#' data scenario 1 is reproduced using less significance levels and repetitions 
 #' than in the manusscript, as the runtime without a computing cluster 
 #' would otherwise be too high.
 
@@ -38,76 +38,65 @@ pacman::p_load(reshape2)
 
 #---------------------------------------
 # Load and prepare data
+# Data from publication
+# min.bucket = 100 and metric = "weighted splitting variables" was used for this figure
+results <- read.csv2(file.path(proc_dir, "results_simulations.csv")) %>% 
+  filter(min.bucket == 100 & metric == "weighted splitting variables") 
 
 # Data produced by simulations.R
-results <- readRDS(file.path(proc_dir, "results_benchmark.Rds")) %>% bind_rows()
+ results <- readRDS(file.path(proc_dir, "results.Rds")) %>% 
+   bind_rows() %>% 
+   filter(min.bucket == 100 & metric == "weighted splitting variables") 
 
 # Change names and calculate confidence level in percent as (1 - significance level)*100 and coverage as 1 - error
 results <- results  %>% 
-  mutate(confidence_level = (1 - significance_level)*100,
-         coverage_icp = 100-mean_error_calibration,
-         coverage_mondrian_icp = 100-mean_error_mondrian_calibration)
+  mutate(scenario = case_when(setting == "Setting 1" ~ "large effects",
+                              setting == "Setting 2" ~ "small effects",
+                              setting == "Setting 3" ~ "correlations",
+                              setting == "Setting 4" ~ "interactions",
+                              setting == "Setting 5" ~ "continuous variables"),
+         scenario = factor(scenario, 
+                           levels = c("large effects", "small effects", "correlations", "interactions", "continuous variables"), 
+                           labels = c("large effects", "small effects", "correlations", "interactions", "continuous variables"))) 
 
 #---------------------------------------
-# Plot data from figure 3A and save plot
-
-# Aggregate meausures from repetitions using mean
-marginal_coverage_mondrian_icp <- aggregate(coverage_mondrian_icp ~ confidence_level + task_name + min.bucket_art, results, function(x) c(mean_error = mean(x)))
-marginal_coverage_icp <- aggregate(coverage_icp ~ confidence_level + task_name + min.bucket_art, results, function(x) c(mean_error = mean(x)))
-
-# Transform data in long format
-plot_figure2a <- left_join(marginal_coverage_mondrian_icp, marginal_coverage_icp) %>% 
-  melt(id=c("task_name", "confidence_level", "min.bucket_art")) %>% 
-  mutate(variable = ifelse(variable == "coverage_icp", "ICP", "Mondrian ICP"))
-
-
-ggplot(plot_figure2a, aes(x = confidence_level, y = value, col = task_name, group = task_name))+
-  facet_grid(variable~.)+
-  theme_bw()+
-  geom_line()+
-  geom_abline(slope = 1, linetype = "dashed", intercept = 0)+
-  labs(x = "Confidence level (%)",
-       y = "Marginal Coverage (%)",
-       col = "") +
-  theme(text = element_text(size = 15), legend.position = "right",
-        legend.text = element_text(size = 14),
-        legend.title = element_text(size = 14),
-        legend.key.size = unit(0.6, 'cm'),
-        strip.text.y = element_text(size = 18))
-
-# save plot
-ggsave(file.path(out_dir, "fig3A_averaged_coverage.png"), units = "cm", width = 20, height = 8)
-
-
+# Plot data from figure 3 and save plot
+# Plot interval width ICP, Mondrian ICP, CPS, Mondrian CPS
 #---------------------------------------
-# Plot data from figure 3B and save plot
-
-# Aggregate meausures from repetitions using mean
-interval_width_mondrian_icp <- aggregate(mean_interval_size_mondrian_calibration ~ confidence_level + task_name + min.bucket_art, results, function(x) c(mean_error = mean(x)))
-interval_width_icp <- aggregate(mean_interval_size_calibration ~ confidence_level + task_name + min.bucket_art, results, function(x) c(mean_error = mean(x)))
-
 # Transform data in long format
-plot_figure2b <- left_join(interval_width_mondrian_icp, interval_width_icp) %>% 
-  melt(id=c("task_name", "confidence_level", "min.bucket_art")) %>% 
-  mutate(variable = ifelse(variable == "mean_interval_size_calibration", "ICP", "Mondrian ICP"))
+width_df1 <- aggregate(mean_interval_size_mondrian_icp ~ significance_level + scenario + min.bucket, results, function(x) c(mean_error = mean(x)))
+width_df2 <- aggregate(mean_interval_size_icp ~ significance_level + scenario + min.bucket, results, function(x) c(mean_error = mean(x)))
+width_df3 <- aggregate(mean_interval_width_cps_two_tailed ~ significance_level + scenario + min.bucket, results, function(x) c(mean_error = mean(x)))
+width_df4 <- aggregate(mean_interval_width_cps_two_tailed_mondrian ~ significance_level + scenario + min.bucket, results, function(x) c(mean_error = mean(x)))
 
+plot_data_width <- left_join(width_df1, width_df2) %>% 
+  left_join(width_df3) %>% 
+  left_join(width_df4) %>% 
+  reshape2::melt(id=c("scenario", "significance_level", "min.bucket")) %>% 
+  mutate(variable = case_when(variable == "mean_interval_size_icp" ~ "ICP",
+                              variable == "mean_interval_size_mondrian_icp" ~ "Mondrian ICP",
+                              variable == "mean_interval_width_cps_two_tailed" ~ "CPS",
+                              TRUE ~ "Mondrian CPS")) %>% 
+  mutate(scenario = factor(scenario, 
+                           levels = c("large effects", "small effects", "correlations", "interactions", "continuous variables"), 
+                           labels = c("large effects", "small effects", "correlations", "interactions", "continuous variables")))
 
-ggplot(plot_figure2b, aes(x=confidence_level, y=value, col = task_name, group = task_name))+
-  facet_grid(variable~.)+
+plot_width = ggplot(plot_data_width %>% filter(min.bucket == 100), 
+                    aes(x=significance_level*100, y=value, col = variable, group = variable))+
+  facet_wrap(scenario~.)+
   theme_bw()+
   geom_line()+
-  labs(x = "Confidence level (%)",
+  labs(x = "Significance level (%)",
        y = "Interval width",
-       col = "") +
-  theme(text = element_text(size = 15), legend.position = "right",
+       col = "Method")+
+  theme(text = element_text(size = 15), #legend.position = "right",
         legend.text = element_text(size = 14),
         legend.title = element_text(size = 14),
         legend.key.size = unit(0.6, 'cm'),
-        strip.text.y = element_text(size = 18))
+        strip.text.y = element_text(size = 18),
+        strip.text.x = element_text(size = 18))
+
 
 # save plot
-ggsave(file.path(out_dir, "fig3B_averaged_intervalwidth.png"), units = "cm", width = 20, height = 8)
-
-
-
+ggsave(plot_width, filename = file.path(out_dir, "fig3_simulation_intervalwidth.png"), width = 12, height = 12, units = "cm", dpi = 200)
 

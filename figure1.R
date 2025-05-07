@@ -1,12 +1,11 @@
-#' With this script the figure 1 from Kronziel et al. "Increasing the 
-#' explainability of artificial representative trees through conformal 
-#' prediction to quantify uncertainty" can be reproduced. 
+#' With this script the figure 1 from Kronziel et al. "Uncertainty 
+#' quantification enhances the explainability of 
+#' artificial representative trees" can be reproduced. 
 #' Given a simulated data set. Run simulations.R to get such a data set. 
 #' With the standard parameters in simulations.R, only the part for 
 #' data scenario 1 is reproduced using less significance levels and repetitions 
 #' than in the manusscript, as the runtime without a computing cluster 
 #' would otherwise be too high.
-
 #---------------------------------------
 # Define directories
 # Please define your main directory here. 
@@ -38,6 +37,7 @@ pacman::p_load(tidyr)
 
 if("timbR" %in% installed.packages()){
   library(timbR)
+  warning("Please check, if timbR version 3.1 is installed.")
 } else {
   devtools::install_github("imbs-hl/timbR", "master")
   library(timbR)
@@ -93,10 +93,10 @@ train_dat      <- instance[[7]]
 dependent_varname <- instance[[8]]
 
 ## Generate artificial rep tree
-rf_rep <- generate_tree_reimplementation(rf = rf, metric = metric, test_data = test_dat, train_data = train_dat, 
-                                         importance.mode = TRUE, imp.num.var = imp.num.var, dependent_varname = dependent_varname,
-                                         probs_quantiles = NULL, epsilon = epsilon, min.bucket = min.bucket
-                                         )
+rf_rep <- generate_tree(rf = rf, metric = metric, test_data = test_dat, train_data = train_dat, 
+                            importance.mode = TRUE, imp.num.var = imp.num.var, dependent_varname = dependent_varname,
+                            probs_quantiles = NULL, epsilon = epsilon,
+                            min.node.size = 100, num.splits = 3)
 
 tree_info <- treeInfo(rf_rep)
 
@@ -108,46 +108,28 @@ y_cal_pred <- predict(rf_rep, cal_dat)$predictions
 y_test_pred <- predict(rf_rep, test_dat)$predictions
 
 #---------------------------------------
-# Calibration using inductive conformal prediction (ICP)
+# Calibration using Mondrian inductive conformal prediction (ICP)
 # Get calibrated prediction for test data
-calibrated_predictions <- get_calibrated_prediction_regression(y_cal_pred = y_cal_pred, 
-                                                               y_cal = y_cal, 
-                                                               y_test_pred = y_test_pred, 
-                                                               significance_level = significance_level)
+calibrated_mondrian_predictions <- timbR::get_calibrated_prediction_regression_mondrian(y_cal_pred = y_cal_pred, 
+                                                                                        y_cal = y_cal, 
+                                                                                        y_test_pred = y_test_pred, 
+                                                                                        significance_level = significance_level,
+                                                                                        tree = rf_rep,
+                                                                                        cal_data = cal_dat, 
+                                                                                        test_data = test_dat,
+                                                                                        dependent_varname = dependent_varname,
+                                                                                        show_node_id = TRUE
+)
 
-tree_info_conformal_pred <- tree_info %>% left_join(unique(calibrated_predictions)) %>% 
-  mutate(prediction = round(prediction, 4),
-         lower_bound = round(lower_bound, 4),
-         upper_bound = round(upper_bound, 4))
-
-plot_tree(tree_info_df = tree_info_conformal_pred, train_data_df = train_dat, test_data_df = test_dat, rf_list = rf_rep, 
-          tree_number = 1,  dependent_var = "y",
-          show_sample_size = FALSE, show_prediction_nodes = FALSE, show_uncertainty = TRUE, show_coverage = TRUE, show_intervalwidth = TRUE,
-          vert_sep = 5, hor_sep = 5,
-          work_dir = out_dir, plot_name = "fig1a_tree_scenario1_conformal_prediction", colors = NULL)
-
-#---------------------------------------
-# Calibration per class using Mondrian ICP
-# Get calibrated prediction for test data
-calibrated_mondrian_predictions <- get_calibrated_prediction_regression_mondrian(y_cal_pred = y_cal_pred, 
-                                                                                 y_cal = y_cal, 
-                                                                                 y_test_pred = y_test_pred, 
-                                                                                 significance_level = significance_level,
-                                                                                 tree = rf_rep,
-                                                                                 cal_data = cal_dat, 
-                                                                                 test_data = test_dat,
-                                                                                 dependent_varname = dependent_varname,
-                                                                                 show_node_id = TRUE
-                                                                                 )
-
+# Round bounds to save space
 tree_info_conformal_mondrian_pred <- tree_info %>% left_join(unique(calibrated_mondrian_predictions)) %>% 
-  mutate(prediction = round(prediction, 4),
-         lower_bound = round(lower_bound, 4),
-         upper_bound = round(upper_bound, 4))
+  mutate(prediction = round(prediction, 2),
+         lower_bound = round(lower_bound, 2),
+         upper_bound = round(upper_bound, 2))
 
+# Save plot
 plot_tree(tree_info_df = tree_info_conformal_mondrian_pred, train_data_df = train_dat, test_data_df = test_dat, rf_list = rf_rep, tree_number = 1, 
           dependent_var = "y",
           show_sample_size = FALSE, show_prediction_nodes = FALSE, show_uncertainty = TRUE, show_coverage = TRUE, show_intervalwidth = TRUE,
           vert_sep = 5, hor_sep = 5,
-          work_dir = out_dir, plot_name = "fig1b_tree_scenario1_conformal_mondrian_prediction", colors = NULL)
-
+          work_dir = out_dir, plot_name = "fig1_tree_scenario1_conformal_mondrian_prediction", colors = NULL)

@@ -1,6 +1,6 @@
-#' With this script the benchmark evaluation from Kronziel et al. "Increasing the 
-#' explainability of artificial representative trees through conformal 
-#' prediction to quantify uncertainty" can be reproduced. 
+#' With this script the figure 1 from Kronziel et al. "Uncertainty 
+#' quantification enhances the explainability of 
+#' artificial representative trees" can be reproduced. 
 #' Please note, that the simulations in the paper were performed using 
 #' batchtools on  a high throughout batch system. This script will implement 
 #' the same calculations on your local system, which may lead to a high 
@@ -43,6 +43,7 @@ pacman::p_load(farff)
 
 if("timbR" %in% installed.packages()){
   library(timbR)
+  warning("Please check, if timbR version 3.1 is installed.")
 } else {
   devtools::install_github("imbs-hl/timbR", "master")
   library(timbR)
@@ -79,7 +80,7 @@ imp.num.var <- c(5) # p ggf später
 probs_quantiles <- list(c(0.25,0.5,0.75)) 
 epsilon <- c(0.05)
 min.bucket <- 100                              # In Publication 25 was also used
-significance_level <- seq(0.1, 0.9, 0.2)       # In Publication seq(0.025, 0.975, 0.025) was used
+significance_level <- list(seq(0.1, 0.9, 0.2))       # In Publication seq(0.025, 0.975, 0.025) was used
 
 # replicates of simulation (cv is used)
 repls <- 1

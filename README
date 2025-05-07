@@ -1,9 +1,9 @@
-With this git repo the simulations and figures from Kronziel et al. "Increasing the explainability of artificial representative trees through conformal prediction to quantify uncertainty" can be reproduced. Please note, that the simulations in the paper were performed using a high throughout batch system. This repo will implement the same calculations on your local system, which may lead to a high computation time. 
+With this git repo the simulations and figures from Kronziel et al. "Uncertainty quantification enhances the explainability of artificial representative trees" can be reproduced. Please note, that the simulations in the paper were performed using a high throughout batch system. This repo will implement the same calculations on your local system, which may lead to a high computation time. 
 
-To start, please first open simulations.R in RStudio. By running this script you should be able to generate a first data set. The preselected settings will need around 10 minutes to calculate. Please note, that the calculations as in the paper will need more than 100 days on a local system. 
+To start, please first open simulations.R in RStudio. By running this script you should be able to generate a first data set. The preselected settings will need around 5-10 minutes to calculate. Please note, that the calculations as in the paper will need more than 100 days on a local system. 
 
 To run the benchmark evaluation, please first open benchmark_data.R in RStudio. By running this script you should be able to generate a first data set. The preselected settings will need around 5 minutes to calculate. Please note, that the calculations as in the paper will need more than 100 days on a local system. 
 
-The scripts figure1.R, figure2.R, and figure3.R can be used to reproduce the figures 1, 2 and 3 from the paper, tables1and2.R the tables 1 and 2. You can choose if you want to build the figures from you self calculated data or to import the precalculated simulation data from the paper, which you can find in the proc folder. 
+The scripts figure1.R, figure2.R, ... and figure6.R can be used to reproduce the figures 1 - 6 from the paper. You can choose if you want to build the figures from you self calculated data or to import the precalculated simulation and benchmark data from the paper, which you can find in the proc folder. 
 
 For any issues or questions please contact me by l.kronziel[at]uni-luebeck.de.

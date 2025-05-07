@@ -1,6 +1,6 @@
-#' With this script the simulations from Kronziel et al. "Increasing the 
-#' explainability of artificial representative trees through conformal 
-#' prediction to quantify uncertainty" can be reproduced. 
+#' With this script the figure 1 from Kronziel et al. "Uncertainty 
+#' quantification enhances the explainability of 
+#' artificial representative trees" can be reproduced. 
 #' Please note, that the simulations in the paper were performed using 
 #' batchtools on  a high throughout batch system. This script will implement 
 #' the same calculations on your local system, which may lead to a high 
@@ -37,6 +37,7 @@ pacman::p_load(rpart)
 pacman::p_load(dplyr)
 
 if("timbR" %in% installed.packages()){
+  warning("Please check, if timbR version 3.1 is installed.")
   library(timbR)
 } else {
   devtools::install_github("imbs-hl/timbR", "master")
@@ -80,18 +81,18 @@ mtry          <- sqrt(p)                       # Mtry for random forest
 min_node_size <- 100                           # Minimal node size for random forest
 
 # parameter of MRT and ART
-metric   <- c("weighted splitting variables")  # Simularity / distance measure for building ART
+metric   <- c("weighted splitting variables", "prediction")  # Simularity / distance measure for building ART
 
 # parameter of ART
 imp.num.var <- 5                               # Number of variables to be pre selected for ART based on importance values
 probs_quantiles <- list(c(0.25,0.5,0.75))      # Use quantiles of split points instead of all split points for continuous variables when creating the ART to save time (in publication NULL was used)
 epsilon <- 0.05                                # Continue adding more nodes to the ART if the similarity remains the same but the prediction improves by 1 - epsilon
-min.bucket <- 100                              # In Publication 25 was also used
-significance_level <- seq(0.1, 0.9, 0.2)       # In Publication seq(0.025, 0.975, 0.025) was used
+min.bucket <- c(25,100)                             # In Publication 25 was also used
+significance_level <- list(seq(0.1, 0.9, 0.1)) # In Publication seq(0.025, 0.975, 0.025) was used
 
 # Number of times each experiment is repeated. You can save time here
 # (in publication 100 was used, for time reasons 3 is used here)
-repls <- 3
+repls <- 10
 
 #---------------------------------------
 # Create registry 
@@ -215,7 +216,7 @@ algo.designs <- list(
                                 probs_quantiles = probs_quantiles,
                                 epsilon = epsilon,
                                 min.bucket = min.bucket, 
-                                significance_level = seq(0.025, 0.975, 0.025))
+                                significance_level = significance_level)
 )
 
 
@@ -235,7 +236,7 @@ summarizeExperiments(reg = reg)
 # Please change this if you have a batch system. 
 submitJobs(ids = ids, reg = reg)
 
-#' With pre selected parameters it will take around 10 min to complete.
+#' With pre selected parameters it will take around 5 min to complete.
 #' Please note, the run times for the other settings could differ. 
 #' Anyway simulating data for the figures in the paper will probably run for several days on you computer. 
 

@@ -39,14 +39,14 @@ pacman::p_load(cowplot)
 
 #---------------------------------------
 # Load and prepare data
-# Data from publication
-results <- read.csv2(file.path(proc_dir, "results_simulations.csv")) 
+# # Data from publication
+# results <- read.csv2(file.path(proc_dir, "results_simulations.csv")) 
 
 # Data produced by simulations.R
- results <- readRDS(file.path(proc_dir, "results.Rds")) %>% 
+results <- readRDS(file.path(proc_dir, "results.Rds")) %>% 
    bind_rows() 
 
-# Change names and calculate confidence level in percent as (1 - significance level)*100 and coverage as 1 - error
+# Change names 
 results <- results  %>% 
   mutate(scenario = case_when(setting == "Setting 1" ~ "large effects",
                               setting == "Setting 2" ~ "small effects",

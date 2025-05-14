@@ -1,5 +1,5 @@
-#' With this script the figure 1 from Kronziel et al. "Uncertainty 
-#' quantification enhances the explainability of 
+#' With this script the results using the benchmark data from Kronziel et al. 
+#' "Uncertainty quantification enhances the explainability of 
 #' artificial representative trees" can be reproduced. 
 #' Please note, that the simulations in the paper were performed using 
 #' batchtools on  a high throughout batch system. This script will implement 

@@ -38,9 +38,9 @@ pacman::p_load(reshape2)
 
 #---------------------------------------
 # Load and prepare data
-# Data from publication
-results <- read.csv2(file.path(proc_dir, "results_simulations.csv")) %>% 
-  filter(min.bucket == 100 & metric == "weighted splitting variables") 
+# # Data from publication
+# results <- read.csv2(file.path(proc_dir, "results_simulations.csv")) %>% 
+#   filter(min.bucket == 100 & metric == "weighted splitting variables") 
 
 results_benchmark <- read.csv2(file.path(proc_dir, "benchmark_data_results.csv")) %>% 
   filter(min.bucket == 100 & metric == "weighted splitting variables") %>%

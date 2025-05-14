@@ -38,10 +38,10 @@ pacman::p_load(reshape2)
 
 #---------------------------------------
 # Load and prepare data
-# Data from publication
-# min.bucket = 100 and metric = "weighted splitting variables" was used for this figure
-results <- read.csv2(file.path(proc_dir, "results_simulations.csv")) %>% 
-  filter(min.bucket == 100 & metric == "weighted splitting variables") 
+# # Data from publication
+# # min.bucket = 100 and metric = "weighted splitting variables" was used for this figure
+# results <- read.csv2(file.path(proc_dir, "results_simulations.csv")) %>% 
+#   filter(min.bucket == 100 & metric == "weighted splitting variables") 
 
 # Data produced by simulations.R
  results <- readRDS(file.path(proc_dir, "results.Rds")) %>% 
@@ -98,5 +98,5 @@ plot_width = ggplot(plot_data_width %>% filter(min.bucket == 100),
 
 
 # save plot
-ggsave(plot_width, filename = file.path(out_dir, "fig3_simulation_intervalwidth.png"), width = 12, height = 12, units = "cm", dpi = 200)
+ggsave(plot_width, filename = file.path(out_dir, "fig3_simulation_intervalwidth.png"), width = 25, height = 12, units = "cm", dpi = 200)
 

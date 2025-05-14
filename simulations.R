@@ -1,4 +1,4 @@
-#' With this script the figure 1 from Kronziel et al. "Uncertainty 
+#' With this script the simulated results from Kronziel et al. "Uncertainty 
 #' quantification enhances the explainability of 
 #' artificial representative trees" can be reproduced. 
 #' Please note, that the simulations in the paper were performed using 
@@ -35,6 +35,7 @@ pacman::p_load(ranger)
 pacman::p_load(devtools)
 pacman::p_load(rpart)
 pacman::p_load(dplyr)
+pacman::p_load(bindata)
 
 if("timbR" %in% installed.packages()){
   warning("Please check, if timbR version 3.1 is installed.")
@@ -87,11 +88,11 @@ metric   <- c("weighted splitting variables", "prediction")  # Simularity / dist
 imp.num.var <- 5                               # Number of variables to be pre selected for ART based on importance values
 probs_quantiles <- list(c(0.25,0.5,0.75))      # Use quantiles of split points instead of all split points for continuous variables when creating the ART to save time (in publication NULL was used)
 epsilon <- 0.05                                # Continue adding more nodes to the ART if the similarity remains the same but the prediction improves by 1 - epsilon
-min.bucket <- c(25,100)                             # In Publication 25 was also used
-significance_level <- list(seq(0.1, 0.9, 0.1)) # In Publication seq(0.025, 0.975, 0.025) was used
+min.bucket <- c(25,100)                        # Minimal terminal node size. No nodes with less obersavtions smaller than this value can occur.
+significance_level <- list(seq(0.1, 0.9, 0.1)) # Significance level used in uncertainty quantification for prediction intervals. In Publication seq(0.025, 0.975, 0.025) was used
 
 # Number of times each experiment is repeated. You can save time here
-# (in publication 100 was used, for time reasons 3 is used here)
+# (in publication 100 was used, for time reasons 10 is used here)
 repls <- 10
 
 #---------------------------------------
@@ -101,7 +102,7 @@ reg <- batchtools::makeExperimentRegistry(
   file.dir = file.path(reg_dir, reg_name),
   work.dir = main_dir,
   conf.file = NA, # If you have a batch system, please enter conf file here,
-  packages = c("ranger", "timbR", "rpart", "dplyr") # Define which packages to use in your simulations
+  packages = c("ranger", "timbR", "rpart", "dplyr", "bindata") # Define which packages to use in your simulations
 )
 
 
@@ -116,26 +117,26 @@ batchtools::addProblem(name = "simulate_setting_1",
                        fun = simulate_rf_setting_1,
                        data = n,
                        seed = 12345)
-# batchtools::addProblem(name = "simulate_setting_2",
-#                        reg = reg,
-#                        fun = simulate_rf_setting_2,
-#                        data = n,
-#                        seed = 12345)
-# batchtools::addProblem(name = "simulate_setting_3",
-#                        reg = reg,
-#                        fun = simulate_rf_setting_3,
-#                        data = n,
-#                        seed = 12345)
-# batchtools::addProblem(name = "simulate_setting_4",
-#                        reg = reg,
-#                        fun = simulate_rf_setting_4,
-#                        data = n,
-#                        seed = 12345)
-# batchtools::addProblem(name = "simulate_setting_5",
-#                        reg = reg,
-#                        fun = simulate_rf_setting_5,
-#                        data = n,
-#                        seed = 12345)
+batchtools::addProblem(name = "simulate_setting_2",
+                       reg = reg,
+                       fun = simulate_rf_setting_2,
+                       data = n,
+                       seed = 12345)
+batchtools::addProblem(name = "simulate_setting_3",
+                       reg = reg,
+                       fun = simulate_rf_setting_3,
+                       data = n,
+                       seed = 12345)
+batchtools::addProblem(name = "simulate_setting_4",
+                       reg = reg,
+                       fun = simulate_rf_setting_4,
+                       data = n,
+                       seed = 12345)
+batchtools::addProblem(name = "simulate_setting_5",
+                       reg = reg,
+                       fun = simulate_rf_setting_5,
+                       data = n,
+                       seed = 12345)
 
 # Add algorithms to solve the problem ----
 batchtools::addAlgorithm(reg = reg,
@@ -156,57 +157,57 @@ prob.designs <- list(
                                   mtry        = mtry,
                                   min_node_size = min_node_size,
                                   stringsAsFactors = FALSE
+  ),
+  simulate_setting_2 = data.frame(p_eff       = 50,
+                                  beta_eff    = 0.2,
+                                  n_test      = n_test,
+                                  n_cal       = n_cal,
+                                  p           = p,
+                                  num.trees   = num.trees,
+                                  eps         = eps,
+                                  mtry        = mtry,
+                                  min_node_size = min_node_size,
+                                  stringsAsFactors = FALSE
+  ),
+  simulate_setting_3 = data.frame(p_eff       = 5,
+                                  beta_eff    = 2,
+                                  n_test      = n_test,
+                                  n_cal       = n_cal,
+                                  p           = p,
+                                  p_corr      = 5,
+                                  n_blocks    = 5,
+                                  cor         = 0.3,
+                                  num.trees   = num.trees,
+                                  eps         = eps,
+                                  mtry        = mtry,
+                                  min_node_size = min_node_size,
+                                  stringsAsFactors = FALSE
+  ),
+  simulate_setting_4 = data.frame(p_eff       = 5,
+                                  beta_eff    = 2,
+                                  n_test      = n_test,
+                                  n_cal       = n_cal,
+                                  p           = p,
+                                  p_int       = 5,
+                                  beta_int    = 2,
+                                  num.trees   = num.trees,
+                                  eps         = eps,
+                                  mtry        = mtry,
+                                  min_node_size = min_node_size,
+                                  stringsAsFactors = FALSE
+  ),
+  simulate_setting_5 = data.frame(p_eff_bin   = 5,
+                                  p_eff_con   = 5,
+                                  beta_eff    = 2,
+                                  n_test      = n_test,
+                                  n_cal       = n_cal,
+                                  p           = p,
+                                  num.trees   = num.trees,
+                                  eps         = eps,
+                                  mtry        = mtry,
+                                  min_node_size = min_node_size,
+                                  stringsAsFactors = FALSE
   )
-  # simulate_setting_2 = data.frame(p_eff       = 50,
-  #                                 beta_eff    = 0.2,
-  #                                 n_test      = n_test,
-  #                                 n_cal       = n_cal,
-  #                                 p           = p,
-  #                                 num.trees   = num.trees,
-  #                                 eps         = eps,
-  #                                 mtry        = mtry,
-  #                                 min_node_size = min_node_size,
-  #                                 stringsAsFactors = FALSE
-  # ),
-  # simulate_setting_3 = data.frame(p_eff       = 5,
-  #                                 beta_eff    = 2,
-  #                                 n_test      = n_test,
-  #                                 n_cal       = n_cal,
-  #                                 p           = p,
-  #                                 p_corr      = 5,
-  #                                 n_blocks    = 5,
-  #                                 cor         = 0.3,
-  #                                 num.trees   = num.trees,
-  #                                 eps         = eps,
-  #                                 mtry        = mtry,
-  #                                 min_node_size = min_node_size,
-  #                                 stringsAsFactors = FALSE
-  # ),
-  # simulate_setting_4 = data.frame(p_eff       = 5,
-  #                                 beta_eff    = 2,
-  #                                 n_test      = n_test,
-  #                                 n_cal       = n_cal,
-  #                                 p           = p,
-  #                                 p_int       = 5,
-  #                                 beta_int    = 2,
-  #                                 num.trees   = num.trees,
-  #                                 eps         = eps,
-  #                                 mtry        = mtry,
-  #                                 min_node_size = min_node_size,
-  #                                 stringsAsFactors = FALSE
-  # ),
-  # simulate_setting_5 = data.frame(p_eff_bin   = 5,
-  #                                 p_eff_con   = 5,
-  #                                 beta_eff    = 2,
-  #                                 n_test      = n_test,
-  #                                 n_cal       = n_cal,
-  #                                 p           = p,
-  #                                 num.trees   = num.trees,
-  #                                 eps         = eps,
-  #                                 mtry        = mtry,
-  #                                 min_node_size = min_node_size,
-  #                                 stringsAsFactors = FALSE
-  # )
 )
 
 algo.designs <- list(

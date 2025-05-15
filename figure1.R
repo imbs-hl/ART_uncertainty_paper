@@ -70,6 +70,7 @@ min.bucket <- 100
 # Build ART
 set.seed(1234)
 
+# If you want to use other settings please change also the input parameters
 instance <- simulate_rf_setting_1(data = n,
                                   p_eff       = 5,
                                   beta_eff    = 2,

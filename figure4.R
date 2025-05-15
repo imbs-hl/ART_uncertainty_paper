@@ -80,7 +80,8 @@ plot_data_width <- left_join(width_df1, width_df2) %>%
                            labels = c("large effects", "small effects", "correlations", "interactions", "continuous variables")))
 
 
-# Only Scenario 1
+# Only scenario 1
+# if you want to use other scenarios please adjust "filter(scenario == "large effects")" in the line below
 plot_minbucket_width_scenario1 <- ggplot(plot_data_width %>% filter(scenario == "large effects"), 
                                          aes(x=(significance_level*100), y=value, col = factor(min.bucket), group = min.bucket))+
   facet_wrap(.~variable, ncol = 2)+
@@ -116,7 +117,8 @@ plot_data_metric_width <- left_join(width_metric_df1, width_metric_df2) %>%
                               variable == "mean_interval_width_cps_two_tailed" ~ "CPS",
                               TRUE ~ "Mondrian CPS"))
 
-# nur scenario 1
+# Only scenario 1
+# if you want to use other scenarios please adjust "filter(scenario == "large effects")" in the line below
 plot_metric_width_scenario1 <- ggplot(plot_data_metric_width %>% filter(scenario == "large effects"), 
                                       aes(x=(significance_level*100), y=value, col = factor(metric), group = metric))+
   facet_wrap(.~variable, ncol = 2)+

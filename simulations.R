@@ -147,17 +147,17 @@ batchtools::addAlgorithm(reg = reg,
 
 # define problem and algorithm designs
 prob.designs <- list(
-  simulate_setting_1 = data.frame(p_eff       = 5, # Number of true effect variables
-                                  beta_eff    = 2, # Effect size of true effect variables
-                                  n_test      = n_test,
-                                  n_cal       = n_cal, 
-                                  p           = p, 
-                                  num.trees   = num.trees,
-                                  eps         = eps,
-                                  mtry        = mtry,
-                                  min_node_size = min_node_size,
-                                  stringsAsFactors = FALSE
-  ),
+  # simulate_setting_1 = data.frame(p_eff       = 5, # Number of true effect variables
+  #                                 beta_eff    = 2, # Effect size of true effect variables
+  #                                 n_test      = n_test,
+  #                                 n_cal       = n_cal, 
+  #                                 p           = p, 
+  #                                 num.trees   = num.trees,
+  #                                 eps         = eps,
+  #                                 mtry        = mtry,
+  #                                 min_node_size = min_node_size,
+  #                                 stringsAsFactors = FALSE
+  # )
   simulate_setting_2 = data.frame(p_eff       = 50,
                                   beta_eff    = 0.2,
                                   n_test      = n_test,
@@ -169,20 +169,20 @@ prob.designs <- list(
                                   min_node_size = min_node_size,
                                   stringsAsFactors = FALSE
   ),
-  simulate_setting_3 = data.frame(p_eff       = 5,
-                                  beta_eff    = 2,
-                                  n_test      = n_test,
-                                  n_cal       = n_cal,
-                                  p           = p,
-                                  p_corr      = 5,
-                                  n_blocks    = 5,
-                                  cor         = 0.3,
-                                  num.trees   = num.trees,
-                                  eps         = eps,
-                                  mtry        = mtry,
-                                  min_node_size = min_node_size,
-                                  stringsAsFactors = FALSE
-  ),
+  # simulate_setting_3 = data.frame(p_eff       = 5,
+  #                                 beta_eff    = 2,
+  #                                 n_test      = n_test,
+  #                                 n_cal       = n_cal,
+  #                                 p           = p,
+  #                                 p_corr      = 5,
+  #                                 n_blocks    = 5,
+  #                                 cor         = 0.3,
+  #                                 num.trees   = num.trees,
+  #                                 eps         = eps,
+  #                                 mtry        = mtry,
+  #                                 min_node_size = min_node_size,
+  #                                 stringsAsFactors = FALSE
+  # ),
   simulate_setting_4 = data.frame(p_eff       = 5,
                                   beta_eff    = 2,
                                   n_test      = n_test,
@@ -195,19 +195,19 @@ prob.designs <- list(
                                   mtry        = mtry,
                                   min_node_size = min_node_size,
                                   stringsAsFactors = FALSE
-  ),
-  simulate_setting_5 = data.frame(p_eff_bin   = 5,
-                                  p_eff_con   = 5,
-                                  beta_eff    = 2,
-                                  n_test      = n_test,
-                                  n_cal       = n_cal,
-                                  p           = p,
-                                  num.trees   = num.trees,
-                                  eps         = eps,
-                                  mtry        = mtry,
-                                  min_node_size = min_node_size,
-                                  stringsAsFactors = FALSE
   )
+  # simulate_setting_5 = data.frame(p_eff_bin   = 5,
+  #                                 p_eff_con   = 5,
+  #                                 beta_eff    = 2,
+  #                                 n_test      = n_test,
+  #                                 n_cal       = n_cal,
+  #                                 p           = p,
+  #                                 num.trees   = num.trees,
+  #                                 eps         = eps,
+  #                                 mtry        = mtry,
+  #                                 min_node_size = min_node_size,
+  #                                 stringsAsFactors = FALSE
+  # )
 )
 
 algo.designs <- list(

@@ -1,4 +1,4 @@
-#' With this script the results using the benchmark data from Kronziel et al. 
+#' With this script the results using the benchmark data from 
 #' "Uncertainty quantification enhances the explainability of 
 #' artificial representative trees" can be reproduced. 
 #' Please note, that the simulations in the paper were performed using 
@@ -43,7 +43,7 @@ pacman::p_load(farff)
 
 if("timbR" %in% installed.packages()){
   library(timbR)
-  warning("Please check, if timbR version 3.1 is installed.")
+  warning("Please check, if timbR with at least version 3.1 is installed.")
 } else {
   devtools::install_github("imbs-hl/timbR", "master")
   library(timbR)
@@ -63,13 +63,14 @@ source("functions/simulate_benchmark_data.R")
 
 # functions to generate the ART
 source("functions/calculate_art_uncertainty_benchmark_data.R")
+source("functions/calculate_mrt_uncertainty_benchmark_data.R")
 
 #---------------------------------------
 # define parameters
 
 # choose data set from OpenML 
 # (https://openml.org/search?type=benchmark&sort=tasks_included&study_type=task&id=269)
-task_ids <- c(233215) # for example Mercedes_Benz_Greener_Manufacturing
+task_ids <- c(359944) # for example abalone
 
 
 # parameter of random forest and ART
@@ -115,6 +116,10 @@ batchtools::addAlgorithm(reg = reg,
                          name = "artificial_rep_tree",
                          fun = calculate_art_rep_tree
 )
+batchtools::addAlgorithm(reg = reg,
+                         name = "most_rep_tree",
+                         fun = calculate_mrt_rep_tree
+)
 
 
 
@@ -135,7 +140,10 @@ algo.designs <- list(
                                     probs_quantiles = probs_quantiles,
                                     epsilon = epsilon,
                                     min.bucket = min.bucket, 
-                                    significance_level = significance_level)
+                                    significance_level = significance_level),
+  most_rep_tree = expand.grid(metric = metric, 
+                              stringsAsFactors = FALSE,
+                              significance_level = significance_level)
 )
 
 # Add experiments 

@@ -1,4 +1,4 @@
-#' With this script the figure 5 from Kronziel et al. "Uncertainty 
+#' With this script the figure 5 from "Uncertainty 
 #' quantification enhances the explainability of 
 #' artificial representative trees" can be reproduced. 
 #' Given a simulated data set. Run simulations.R to get such a data set. 
@@ -37,17 +37,19 @@ pacman::p_load(tidyr)
 pacman::p_load(reshape2)
 
 #---------------------------------------
-# Load and prepare data
-# # Data from publication
-# results <- read.csv2(file.path(proc_dir, "results_simulations.csv")) %>% 
-#   filter(min.bucket == 100 & metric == "weighted splitting variables") 
+# # Load and prepare data
+# # # Data from publication
+# results <- read.csv2(file.path(proc_dir, "results_simulations.csv")) %>%
+#   filter(min.bucket == 100 & metric == "weighted splitting variables")
+# 
+# results_benchmark <- read.csv2(file.path(proc_dir, "benchmark_data_results.csv")) %>%
+#   filter(min.bucket == 100 & metric == "weighted splitting variables") %>%
+#   mutate(task_name_short = case_when(task_name == "Mercedes_Benz_Greener_Manufacturing" ~ "Mercedes Benz",
+#                                      task_name == "SAT11-HAND-runtime-regression" ~ "SAT11",
+#                                      task_name == "Allstate_Claims_Severity" ~ "Allstate",
+#                                      TRUE ~ task_name))
 
-results_benchmark <- read.csv2(file.path(proc_dir, "benchmark_data_results.csv")) %>% 
-  filter(min.bucket == 100 & metric == "weighted splitting variables") %>%
-  mutate(task_name_short = case_when(task_name == "Mercedes_Benz_Greener_Manufacturing" ~ "Mercedes Benz",
-                                     task_name == "SAT11-HAND-runtime-regression" ~ "SAT11",
-                                     task_name == "Allstate_Claims_Severity" ~ "Allstate",
-                                     TRUE ~ task_name)) 
+
 
 # Data produced by simulations.R
 results <- readRDS(file.path(proc_dir, "results.Rds")) %>% 
@@ -85,9 +87,9 @@ all_data <- bind_rows(results %>% mutate(task_name_short = scenario),
 marginal_coverage_df1 <- aggregate(mean_error_icp ~ significance_level + task_name_short + min.bucket + metric, all_data, function(x) c(mean_error = mean(x))) %>% 
   mutate(method = "ICP",
          error = mean_error_icp)
-marginal_coverage_df2 <- aggregate(mean_errors_mondrian_icp ~ significance_level + task_name_short + min.bucket + metric, all_data, function(x) c(mean_error = mean(x))) %>% 
+marginal_coverage_df2 <- aggregate(mean_error_mondrian_icp ~ significance_level + task_name_short + min.bucket + metric, all_data, function(x) c(mean_error = mean(x))) %>% 
   mutate(method = "Mondrian ICP",
-         error = mean_errors_mondrian_icp)
+         error = mean_error_mondrian_icp)
 marginal_coverage_df3 <- aggregate(mean_error_cps_two_tailed ~ significance_level + task_name_short + min.bucket + metric, all_data, function(x) c(mean_error = mean(x))) %>% 
   mutate(method = "CPS",
          error = mean_error_cps_two_tailed)

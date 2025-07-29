@@ -1,4 +1,4 @@
-#' With this script the simulated results from Kronziel et al. "Uncertainty 
+#' With this script the simulated results from "Uncertainty 
 #' quantification enhances the explainability of 
 #' artificial representative trees" can be reproduced. 
 #' Please note, that the simulations in the paper were performed using 
@@ -38,7 +38,7 @@ pacman::p_load(dplyr)
 pacman::p_load(bindata)
 
 if("timbR" %in% installed.packages()){
-  warning("Please check, if timbR version 3.1 is installed.")
+  warning("Please check, if timbR with at least version 3.1 is installed.")
   library(timbR)
 } else {
   devtools::install_github("imbs-hl/timbR", "master")
@@ -62,8 +62,9 @@ source("functions/simulate_rf_setting_3.R")
 source("functions/simulate_rf_setting_4.R")
 source("functions/simulate_rf_setting_5.R")
 
-# functions to generate the ART with uncertainty quantification
+# functions to generate the ART and the MRT with uncertainty quantification
 source("functions/calculate_art_uncertainty.R")
+source("functions/calculate_mrt_uncertainty.R")
 
 #---------------------------------------
 # set parameters for simulation
@@ -82,7 +83,7 @@ mtry          <- sqrt(p)                       # Mtry for random forest
 min_node_size <- 100                           # Minimal node size for random forest
 
 # parameter of MRT and ART
-metric   <- c("weighted splitting variables", "prediction")  # Simularity / distance measure for building ART
+metric   <- c("weighted splitting variables", "prediction")  # Similarity / distance measure for building ART
 
 # parameter of ART
 imp.num.var <- 5                               # Number of variables to be pre selected for ART based on importance values
@@ -143,23 +144,16 @@ batchtools::addAlgorithm(reg = reg,
                          name = "art_uncertainty",
                          fun = calculate_art_uncertainty
 )
+batchtools::addAlgorithm(reg = reg,
+                         name = "mrt_uncertainty",
+                         fun = calculate_mrt_uncertainty
+)
 
 
 # define problem and algorithm designs
 prob.designs <- list(
-  # simulate_setting_1 = data.frame(p_eff       = 5, # Number of true effect variables
-  #                                 beta_eff    = 2, # Effect size of true effect variables
-  #                                 n_test      = n_test,
-  #                                 n_cal       = n_cal, 
-  #                                 p           = p, 
-  #                                 num.trees   = num.trees,
-  #                                 eps         = eps,
-  #                                 mtry        = mtry,
-  #                                 min_node_size = min_node_size,
-  #                                 stringsAsFactors = FALSE
-  # )
-  simulate_setting_2 = data.frame(p_eff       = 50,
-                                  beta_eff    = 0.2,
+  simulate_setting_1 = data.frame(p_eff       = 5, # Number of true effect variables
+                                  beta_eff    = 2, # Effect size of true effect variables
                                   n_test      = n_test,
                                   n_cal       = n_cal,
                                   p           = p,
@@ -168,7 +162,18 @@ prob.designs <- list(
                                   mtry        = mtry,
                                   min_node_size = min_node_size,
                                   stringsAsFactors = FALSE
-  ),
+  )
+  # simulate_setting_2 = data.frame(p_eff       = 50,
+  #                                 beta_eff    = 0.2,
+  #                                 n_test      = n_test,
+  #                                 n_cal       = n_cal,
+  #                                 p           = p,
+  #                                 num.trees   = num.trees,
+  #                                 eps         = eps,
+  #                                 mtry        = mtry,
+  #                                 min_node_size = min_node_size,
+  #                                 stringsAsFactors = FALSE
+  # )
   # simulate_setting_3 = data.frame(p_eff       = 5,
   #                                 beta_eff    = 2,
   #                                 n_test      = n_test,
@@ -183,19 +188,19 @@ prob.designs <- list(
   #                                 min_node_size = min_node_size,
   #                                 stringsAsFactors = FALSE
   # ),
-  simulate_setting_4 = data.frame(p_eff       = 5,
-                                  beta_eff    = 2,
-                                  n_test      = n_test,
-                                  n_cal       = n_cal,
-                                  p           = p,
-                                  p_int       = 5,
-                                  beta_int    = 2,
-                                  num.trees   = num.trees,
-                                  eps         = eps,
-                                  mtry        = mtry,
-                                  min_node_size = min_node_size,
-                                  stringsAsFactors = FALSE
-  )
+  # simulate_setting_4 = data.frame(p_eff       = 5,
+  #                                 beta_eff    = 2,
+  #                                 n_test      = n_test,
+  #                                 n_cal       = n_cal,
+  #                                 p           = p,
+  #                                 p_int       = 5,
+  #                                 beta_int    = 2,
+  #                                 num.trees   = num.trees,
+  #                                 eps         = eps,
+  #                                 mtry        = mtry,
+  #                                 min_node_size = min_node_size,
+  #                                 stringsAsFactors = FALSE
+  # )
   # simulate_setting_5 = data.frame(p_eff_bin   = 5,
   #                                 p_eff_con   = 5,
   #                                 beta_eff    = 2,
@@ -217,7 +222,10 @@ algo.designs <- list(
                                 probs_quantiles = probs_quantiles,
                                 epsilon = epsilon,
                                 min.bucket = min.bucket, 
-                                significance_level = significance_level)
+                                significance_level = significance_level),
+  mrt_uncertainty = expand.grid(metric = metric,
+                                stringsAsFactors = FALSE,
+                                significance_level = list(seq(0.025, 0.975, 0.025)))
 )
 
 

@@ -1,4 +1,4 @@
-#' With this script the figure 4 from Kronziel et al. "Uncertainty 
+#' With this script the figure 4 from "Uncertainty 
 #' quantification enhances the explainability of 
 #' artificial representative trees" can be reproduced. 
 #' Given a simulated data set. Run simulations.R to get such a data set. 
@@ -40,11 +40,11 @@ pacman::p_load(cowplot)
 #---------------------------------------
 # Load and prepare data
 # # Data from publication
-# results <- read.csv2(file.path(proc_dir, "results_simulations.csv")) 
+# results <- read.csv2(file.path(proc_dir, "results_simulations.csv"))
 
 # Data produced by simulations.R
-results <- readRDS(file.path(proc_dir, "results.Rds")) %>% 
-   bind_rows() 
+results <- readRDS(file.path(proc_dir, "results.Rds")) %>%
+   bind_rows()
 
 # Change names 
 results <- results  %>% 
@@ -55,21 +55,22 @@ results <- results  %>%
                               setting == "Setting 5" ~ "continuous variables"),
          scenario = factor(scenario, 
                            levels = c("large effects", "small effects", "correlations", "interactions", "continuous variables"), 
-                           labels = c("large effects", "small effects", "correlations", "interactions", "continuous variables")))
+                           labels = c("large effects", "small effects", "correlations", "interactions", "continuous variables")),
+         metric = ifelse(metric == "weighted splitting variables", "WSV", metric))
 
 #---------------------------------------
 # Plot data from figure 4A 
 # Plot interval width for different min.bucket
 #---------------------------------------
 # Transform data in long format
-width_df1 <- aggregate(mean_interval_size_mondrian_icp ~ significance_level + scenario + min.bucket, results %>% filter(metric == "weighted splitting variables"), function(x) c(mean_error = mean(x)))
-width_df2 <- aggregate(mean_interval_size_icp ~ significance_level + scenario + min.bucket, results %>% filter(metric == "weighted splitting variables"), function(x) c(mean_error = mean(x)))
-width_df3 <- aggregate(mean_interval_width_cps_two_tailed ~ significance_level + scenario + min.bucket, results %>% filter(metric == "weighted splitting variables"), function(x) c(mean_error = mean(x)))
-width_df4 <- aggregate(mean_interval_width_cps_two_tailed_mondrian ~ significance_level + scenario + min.bucket, results %>% filter(metric == "weighted splitting variables"), function(x) c(mean_error = mean(x)))
+width_df1 <- aggregate(mean_interval_size_mondrian_icp ~ significance_level + scenario + min.bucket, results %>% filter(metric == "WSV"), function(x) c(mean_error = mean(x)))
+width_df2 <- aggregate(mean_interval_size_icp ~ significance_level + scenario + min.bucket, results %>% filter(metric == "WSV"), function(x) c(mean_error = mean(x)))
+width_df3 <- aggregate(mean_interval_width_cps_two_tailed ~ significance_level + scenario + min.bucket, results %>% filter(metric == "WSV"), function(x) c(mean_error = mean(x)))
+width_df4 <- aggregate(mean_interval_width_cps_two_tailed_mondrian ~ significance_level + scenario + min.bucket, results %>% filter(metric == "WSV"), function(x) c(mean_error = mean(x)))
 
-plot_data_width <- left_join(width_df1, width_df2) %>% 
-  left_join(width_df3) %>% 
-  left_join(width_df4) %>% 
+plot_data_width <- full_join(width_df1, width_df2) %>% 
+  full_join(width_df3) %>% 
+  full_join(width_df4) %>% 
   reshape2::melt(id=c("scenario", "significance_level", "min.bucket")) %>% 
   mutate(variable = case_when(variable == "mean_interval_size_icp" ~ "ICP",
                               variable == "mean_interval_size_mondrian_icp" ~ "Mondrian ICP",
@@ -108,9 +109,9 @@ width_metric_df2 <- aggregate(mean_interval_size_icp ~ significance_level + scen
 width_metric_df3 <- aggregate(mean_interval_width_cps_two_tailed ~ significance_level + scenario + metric, data_width_metric, function(x) c(mean_error = mean(x)))
 width_metric_df4 <- aggregate(mean_interval_width_cps_two_tailed_mondrian ~ significance_level + scenario + metric, data_width_metric, function(x) c(mean_error = mean(x)))
 
-plot_data_metric_width <- left_join(width_metric_df1, width_metric_df2) %>% 
-  left_join(width_metric_df3) %>% 
-  left_join(width_metric_df4) %>% 
+plot_data_metric_width <- full_join(width_metric_df1, width_metric_df2) %>% 
+  full_join(width_metric_df3) %>% 
+  full_join(width_metric_df4) %>% 
   reshape2::melt(id=c("scenario", "significance_level", "metric")) %>% 
   mutate(variable = case_when(variable == "mean_interval_size_icp" ~ "ICP",
                               variable == "mean_interval_size_mondrian_icp" ~ "Mondrian ICP",

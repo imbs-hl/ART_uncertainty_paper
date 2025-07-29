@@ -1,6 +1,16 @@
 calculate_art_uncertainty <- function(data, instance, metric, imp.num.var, probs_quantiles, epsilon, min.bucket = 0, 
                                       num.splits = NULL, significance_level = c(0.1), ...){
 
+  # Function to calculate jaccard index
+  jaccard_index <- function(lower_bound1, lower_bound2, upper_bound1, upper_bound2){
+    intersection_nominator <- max(0, (min(upper_bound1, upper_bound2)-max(lower_bound1, lower_bound2)))
+    union_denominator <- max(upper_bound1, upper_bound2) - min(lower_bound1, lower_bound2)
+    return(intersection_nominator/union_denominator)
+  }
+  # Function to calculate earth mover's distance
+  earth_movers_distance <- function(lower_bound1, lower_bound2, upper_bound1, upper_bound2){
+    return(0.5*(abs(lower_bound1-lower_bound2)+abs(upper_bound1-upper_bound2)))
+  }
   
   # Exctract data from instance 
   test_dat       <- instance[[1]]
@@ -53,6 +63,8 @@ calculate_art_uncertainty <- function(data, instance, metric, imp.num.var, probs
   y_test <- test_dat[,dependent_varname]
   y_cal_pred <- predict(rf_rep, cal_dat)$predictions
   y_test_pred <- predict(rf_rep, test_dat)$predictions
+  y_cal_pred_rf <- predict(rf, cal_dat)$predictions
+  y_test_pred_rf <- predict(rf, test_dat)$predictions
   
   # Calculate uncertainty for each significance level
   mean_error_icp_vec = c()
@@ -67,6 +79,10 @@ calculate_art_uncertainty <- function(data, instance, metric, imp.num.var, probs
   mean_interval_size_mondrian_icp_vec = c()
   mean_interval_width_cps_two_tailed_vec = c()
   mean_interval_width_cps_two_tailed_mondrian_vec = c()
+  mean_jaccard_icp = c()
+  mean_jaccard_cps = c()
+  mean_earth_movers_distance_icp <- c()
+  mean_earth_movers_distance_cps <- c()
   for(alpha in significance_level){
     # Calibration using inductive conformal prediction (ICP)
     calibrated_predictions <- get_calibrated_prediction_regression(y_cal_pred = y_cal_pred, 
@@ -156,7 +172,62 @@ calculate_art_uncertainty <- function(data, instance, metric, imp.num.var, probs
     mean_interval_width_cps_two_tailed_vec = c(mean_interval_width_cps_two_tailed_vec, mean_interval_width_cps_two_tailed)
     mean_interval_width_cps_two_tailed_mondrian_vec = c(mean_interval_width_cps_two_tailed_mondrian_vec, mean_interval_width_cps_two_tailed_mondrian)
     
+    # Calibrate predictions of RF to compare them with ARTs
+    calibrated_predictions_rf <- get_calibrated_prediction_regression(y_cal_pred = y_cal_pred_rf, 
+                                                                      y_cal = y_cal, 
+                                                                      y_test_pred = y_test_pred_rf, 
+                                                                      significance_level = alpha)
+    calibrates_cps_two_tailed_rf <- get_calibrated_predictive_system(y_cal_pred_rf, y_cal, y_test_pred_rf, 
+                                                                     alpha,interval_type = "two-tailed", 
+                                                                     direction = NULL)
+    
+    
+    # Jaccard index between prediction intervals of ARTs and RF for two-tailed ICP
+    jaccard_index_icp <- mapply(jaccard_index, 
+                                lower_bound1 = c(calibrated_predictions_rf$lower_bound),
+                                lower_bound2 = c(calibrated_predictions$lower_bound),
+                                upper_bound1 = c(calibrated_predictions_rf$upper_bound),
+                                upper_bound2 = c(calibrated_predictions$upper_bound), 
+                                SIMPLIFY = TRUE
+    ) %>% mean()
+    mean_jaccard_icp <- c(mean_jaccard_icp, jaccard_index_icp)
+    
+    # Earth mover's distance between prediction intervals of ARTs and RF for two-tailed ICP
+    earth_movers_distance_icp <- mapply(earth_movers_distance, 
+                                        lower_bound1 = c(calibrated_predictions_rf$lower_bound),
+                                        lower_bound2 = c(calibrated_predictions$lower_bound),
+                                        upper_bound1 = c(calibrated_predictions_rf$upper_bound),
+                                        upper_bound2 = c(calibrated_predictions$upper_bound), 
+                                        SIMPLIFY = TRUE
+    ) %>% mean()
+    
+    # Jaccard index and earth mover's distance for CPS
+    jaccard_index_cps <- NA
+    earth_movers_distance_cps <- NA
+    try(    jaccard_index_cps <- mapply(jaccard_index, 
+                                        lower_bound1 = c(calibrates_cps_two_tailed_rf$lower_bound),
+                                        lower_bound2 = c(calibrates_cps_two_tailed$lower_bound),
+                                        upper_bound1 = c(calibrates_cps_two_tailed_rf$upper_bound),
+                                        upper_bound2 = c(calibrates_cps_two_tailed$upper_bound), 
+                                        SIMPLIFY = TRUE) %>% mean()
+    )
+    try(    earth_movers_distance_cps <- mapply(earth_movers_distance, 
+                                                lower_bound1 = c(calibrates_cps_two_tailed_rf$lower_bound),
+                                                lower_bound2 = c(calibrates_cps_two_tailed$lower_bound),
+                                                upper_bound1 = c(calibrates_cps_two_tailed_rf$upper_bound),
+                                                upper_bound2 = c(calibrates_cps_two_tailed$upper_bound), 
+                                                SIMPLIFY = TRUE
+    ) %>% mean()
+    )
+    
+    
+    mean_jaccard_cps <- c(mean_jaccard_cps, jaccard_index_cps)
+    
+    mean_earth_movers_distance_cps <- c(mean_earth_movers_distance_cps, earth_movers_distance_cps)
+    mean_earth_movers_distance_icp <- c(mean_earth_movers_distance_icp, earth_movers_distance_icp)
+    
   }
+
   
   return(results = data.frame(metric= metric, 
                     method               = "artificial tree with uncertainty",
@@ -188,6 +259,10 @@ calculate_art_uncertainty <- function(data, instance, metric, imp.num.var, probs
                     mean_interval_size_mondrian_icp = mean_interval_size_mondrian_icp_vec,
                     mean_interval_width_cps_two_tailed = mean_interval_width_cps_two_tailed_vec,
                     mean_interval_width_cps_two_tailed_mondrian = mean_interval_width_cps_two_tailed_mondrian_vec,
+                    mean_jaccard_cps = mean_jaccard_cps,
+                    mean_jaccard_icp = mean_jaccard_icp,
+                    mean_earth_movers_distance_cps = mean_earth_movers_distance_cps,
+                    mean_earth_movers_distance_icp = mean_earth_movers_distance_icp,
                     n_test                                  = nrow(test_dat),
                     n_train                                 = nrow(train_dat),
                     n_cal                                   = nrow(cal_dat)

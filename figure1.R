@@ -1,4 +1,4 @@
-#' With this script the figure 1 from Kronziel et al. "Uncertainty 
+#' With this script the figure 1 from "Uncertainty 
 #' quantification enhances the explainability of 
 #' artificial representative trees" can be reproduced. 
 #' Given a simulated data set. Run simulations.R to get such a data set. 

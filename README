@@ -1,4 +1,4 @@
-With this git repo the simulations and figures from Kronziel et al. "Uncertainty quantification enhances the explainability of artificial representative trees" can be reproduced. Please note, that the simulations in the paper were performed using a high throughout batch system. This repo will implement the same calculations on your local system, which may lead to a high computation time. 
+With this git repo the simulations and figures "Uncertainty quantification enhances the explainability of artificial representative trees" can be reproduced. Please note, that the simulations in the paper were performed using a high throughout batch system. This repo will implement the same calculations on your local system, which may lead to a high computation time. 
 
 To start, please first open simulations.R in RStudio. By running this script you should be able to generate a first data set. The preselected settings will need around 5-10 minutes to calculate. Please note, that the calculations as in the paper will need more than 100 days on a local system. 
 
@@ -8,4 +8,4 @@ The scripts figure1.R, figure2.R, ... and figure6.R can be used to reproduce the
 
 To clone this repository, use: git clone git@github.com:imbs-hl/ART_uncertainty_paper
 
-For any issues or questions please contact me by l.kronziel[at]uni-luebeck.de.
+For any issues or questions please contact me by xxxx (email will be provided after anonymization is not longer necessary)

@@ -140,10 +140,10 @@ plot_metric_width_scenario1 <- ggplot(plot_data_metric_width %>% filter(scenario
 # Save plot
 #---------------------------------------
 plots_hyperparameters <- plot_grid(plot_minbucket_width_scenario1, plot_metric_width_scenario1, 
-                                   ncol = 1,# align = "hv",
+                                   ncol = 2,# align = "hv",
                                    labels = c("A", "B"))
 
 plots_hyperparameters
 
 ggsave(plots_hyperparameters, filename = file.path(out_dir, "fig4_simulation_intervalwidth_hyperparameter_largeeffects.png"), 
-       width = 20, height = 20, units = "cm", dpi = 200)
+       width = 23, height = 10, units = "cm", dpi = 200)

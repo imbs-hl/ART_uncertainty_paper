@@ -40,21 +40,21 @@ pacman::p_load(reshape2)
 # Load and prepare data
 # Data from publication
 
-results <- read.csv2(file.path(proc_dir, "benchmark_data_results.csv")) %>% 
-  mutate(significance_level2 = (significance_level*100),
-         significance_level3 = paste0(significance_level2, "%"),
-         task_name_short = case_when(task_name == "Mercedes_Benz_Greener_Manufacturing" ~ "Mercedes Benz",
-                                     task_name == "SAT11-HAND-runtime-regression" ~ "SAT11",
-                                     task_name == "Allstate_Claims_Severity" ~ "Allstate",
-                                     TRUE ~ task_name)) 
-
-# # Data from benchmark_data.R
-# results <- readRDS(file.path(proc_dir, "results_benchmark.Rds")) %>% 
-#   bind_rows() %>% 
-#   mutate(task_name_short = case_when(task_name == "Mercedes_Benz_Greener_Manufacturing" ~ "Mercedes Benz",
+# results <- readRDS(file.path(proc_dir, "benchmark_data_results.rds")) %>% 
+#   mutate(significance_level2 = (significance_level*100),
+#          significance_level3 = paste0(significance_level2, "%"),
+#          task_name_short = case_when(task_name == "Mercedes_Benz_Greener_Manufacturing" ~ "Mercedes Benz",
 #                                      task_name == "SAT11-HAND-runtime-regression" ~ "SAT11",
 #                                      task_name == "Allstate_Claims_Severity" ~ "Allstate",
 #                                      TRUE ~ task_name)) 
+
+# Data from benchmark_data.R
+results <- readRDS(file.path(proc_dir, "results_benchmark.Rds")) %>%
+  bind_rows() %>%
+  mutate(task_name_short = case_when(task_name == "Mercedes_Benz_Greener_Manufacturing" ~ "Mercedes Benz",
+                                     task_name == "SAT11-HAND-runtime-regression" ~ "SAT11",
+                                     task_name == "Allstate_Claims_Severity" ~ "Allstate",
+                                     TRUE ~ task_name))
 
 
 #---------------------------------------

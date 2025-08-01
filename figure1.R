@@ -1,11 +1,6 @@
 #' With this script the figure 1 from "Uncertainty 
 #' quantification enhances the explainability of 
-#' artificial representative trees" can be reproduced. 
-#' Given a simulated data set. Run simulations.R to get such a data set. 
-#' With the standard parameters in simulations.R, only the part for 
-#' data scenario 1 is reproduced using less significance levels and repetitions 
-#' than in the manusscript, as the runtime without a computing cluster 
-#' would otherwise be too high.
+#' artificial representative trees" can be reproduced.
 #---------------------------------------
 # Define directories
 # Please define your main directory here. 

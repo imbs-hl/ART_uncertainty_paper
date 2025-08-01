@@ -40,7 +40,7 @@ pacman::p_load(cowplot)
 #---------------------------------------
 # Load and prepare data
 # # Data from publication
-# results <- read.csv2(file.path(proc_dir, "results_simulations.csv"))
+# results <- readRDS(file.path(proc_dir, "results_simulations.rds"))
 
 # Data produced by simulations.R
 results <- readRDS(file.path(proc_dir, "results.Rds")) %>%

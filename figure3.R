@@ -78,7 +78,7 @@ get_legend <- function(plot) {
 # Load and prepare data
 # # # Data from publication
 # # # min.bucket = 100 and metric = "weighted splitting variables" was used for this figure
-# results <- read.csv2(file.path(proc_dir, "results_simulations.csv")) %>%
+# results <- readRDS(file.path(proc_dir, "results_simulations.rds")) %>%
 #   # Change names and calculate confidence level in percent as (1 - significance level)*100 and coverage as 1 - error
 #     mutate(scenario = case_when(setting == "Setting 1" ~ "large effects",
 #                                 setting == "Setting 2" ~ "small effects",

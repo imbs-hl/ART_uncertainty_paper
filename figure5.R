@@ -39,10 +39,10 @@ pacman::p_load(reshape2)
 #---------------------------------------
 # # Load and prepare data
 # # # Data from publication
-# results <- read.csv2(file.path(proc_dir, "results_simulations.csv")) %>%
+# results <- readRDS(file.path(proc_dir, "results_simulations.rds")) %>%
 #   filter(min.bucket == 100 & metric == "weighted splitting variables")
 # 
-# results_benchmark <- read.csv2(file.path(proc_dir, "benchmark_data_results.csv")) %>%
+# results_benchmark <- readRDS(file.path(proc_dir, "benchmark_data_results.rds")) %>%
 #   filter(min.bucket == 100 & metric == "weighted splitting variables") %>%
 #   mutate(task_name_short = case_when(task_name == "Mercedes_Benz_Greener_Manufacturing" ~ "Mercedes Benz",
 #                                      task_name == "SAT11-HAND-runtime-regression" ~ "SAT11",

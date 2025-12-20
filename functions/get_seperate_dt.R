@@ -1,7 +1,9 @@
-# Function to build three decision trees (DTs) as input for parameter "algorithm" using batchtools
-# Prediction of continuous outcome: glycohemoglobin
-# Prediction of probability outcome: prediabetes and diabetes
-# One DT for each outcome
+# Function to construct three decision trees (DTs)
+# Builds one DT for continuous outcome prediction (glycohemoglobin)
+# Builds two separate DTs for probability prediction of prediabetes and diabetes
+# Uses pre-trained random forests as reference for regression performance
+# Returns all DTs together with performance metrics and meta information
+
 get_seperate_dt <- function(data, instance, min.bucket = 0, ...){
   
   # Extract components from instance
@@ -108,5 +110,82 @@ get_seperate_dt <- function(data, instance, min.bucket = 0, ...){
   brier_score6.5 <- BrierScore(brier_score_df$over6.5, brier_score_df$prob6.5)
   
   # Maximum tree depth
-  #--------
+  #----------------
+  get_max_depth <- function(rf_object, tree = 1) {
+    
+    # Extract tree structure
+    ti <- ranger::treeInfo(rf_object, tree = tree)
+    
+    # Compute node depths iteratively
+    depths <- setNames(integer(nrow(ti)), ti$nodeID)
+    depths["0"] <- 0  # root node
+    
+    for (i in seq_len(nrow(ti))) {
+      node <- ti$nodeID[i]
+      
+      # Skip terminal nodes
+      if (ti$terminal[i]) next
+      
+      # Read left and right child nodes
+      left  <- ti$leftChild[i]
+      right <- ti$rightChild[i]
+      
+      depths[as.character(left)]  <- depths[as.character(node)] + 1
+      depths[as.character(right)] <- depths[as.character(node)] + 1
+    }
+    
+    # Return maximum depth
+    max(depths)
+  }
   
+  max_depth <- mean(
+    max(get_max_depth(art_regr)),
+    max(get_max_depth(art_prob5.7)),
+    max(get_max_depth(art_prob6.5))
+  )
+  
+  # Number of terminal nodes
+  num_leaves_regr <- nrow(treeInfo(art_regr) %>% filter(terminal))
+  num_leaves_prediabetes <- nrow(treeInfo(art_prob5.7) %>% filter(terminal))
+  num_leaves_diabetes <- nrow(treeInfo(art_prob6.5) %>% filter(terminal))
+  num_leaves <- mean(num_leaves_regr, num_leaves_prediabetes, num_leaves_diabetes)
+  
+  # Sparsity: number of splitting variables
+  num_vars_split_regr <- length(na.omit(unique(treeInfo(art_regr)$splitvarID)))
+  num_vars_split_prediabetes <- length(na.omit(unique(treeInfo(art_prob5.7)$splitvarID)))
+  num_vars_split_diabetes <- length(na.omit(unique(treeInfo(art_prob6.5)$splitvarID)))
+  num_vars_split <- mean(num_vars_split_regr, num_vars_split_prediabetes, num_vars_split_diabetes)
+  
+  # Return results
+  #----------------
+  return(list(
+    info_df = data.frame(
+      method = "Regression DT + Probability DTs",
+      metric = NA,
+      mse_test_dat_tree = mse_regr_art,
+      mse_test_dat_rf = mse_regr_rf,
+      probs_quantiles = NA,
+      epsilon = NA,
+      min.bucket = min.bucket,
+      significance_level = NA,
+      r.squared_ranger = rf$r.squared,
+      num.splits = paste0(num_splits_regr_art, collapse = ","),
+      runtime = time,
+      n_test = nrow(test_data),
+      n_train = nrow(train_data),
+      n_cal = nrow(cal_data),
+      brier_score5.7 = brier_score5.7,
+      brier_score6.5 = brier_score6.5,
+      interval_width = NA,
+      coverage = NA,
+      max_depth = max_depth,
+      num_leaves = num_leaves,
+      num_vars_split = num_vars_split
+    ) %>% cbind(information_df),
+    tree = art_regr,
+    art_prob5.7 = art_prob5.7,
+    art_prob6.5 = art_prob6.5,
+    test_data = test_data,
+    cal_data = cal_data
+  ))
+}

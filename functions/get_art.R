@@ -1,9 +1,8 @@
-# Function to build an artificial representative tree (ART) as input for parameter "algorithm" using batchtools
-# Prediction of continuous outcome: glycohemoglobin
-# Prediction of probability outcome: prediabetes and diabetes
-# Uses a pre-trained random forest as input
-# Conformal predictive systems (CPS) are used for uncertainty quantification
-# Probabilities for diabetes and prediabetes are estimated per leaf with CPS
+# Function to construct an artificial representative tree (ART)
+# Predicts a continuous outcome (glycohemoglobin) using a pre-trained random forest
+# Estimates leaf-wise probabilities for prediabetes and diabetes via conformal predictive systems (CPS)
+# Provides uncertainty quantification through calibrated prediction intervals
+# Returns the ART, probability estimates per leaf, and multiple performance metrics
 
 get_art <- function(data, instance, metric, probs_quantiles, epsilon, min.bucket = 0, significance_level = 0.1, ...){
   

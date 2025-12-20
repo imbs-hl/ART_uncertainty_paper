@@ -1,8 +1,9 @@
-# Function to build three artificial representative trees (ARTs) as input for parameter "algorithm" using batchtools
-# Prediction of continuous outcome: glycohemoglobin
-# Prediction of probability outcome: prediabetes and diabetes
-# One ART for each outcome
-# Uses a pre-trained random forest as input
+# Function to construct three artificial representative trees (ARTs)
+# Builds one ART for continuous outcome prediction (glycohemoglobin)
+# Builds two separate ARTs for probability prediction of prediabetes and diabetes
+# Uses pre-trained random forests as input for each outcome
+# Returns all ARTs together with performance metrics and meta information
+
 get_seperate_art <- function(data, instance, metric, probs_quantiles, epsilon, min.bucket = 0, significance_level = 0.1, ...){
   
   # Extract components from instance

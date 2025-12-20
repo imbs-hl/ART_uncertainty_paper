@@ -1,9 +1,8 @@
-# Function to build a decision tree (DT) as input for parameter "algorithm" using batchtools
-# Prediction of continuous outcome: glycohemoglobin
-# Prediction of probability outcome: prediabetes and diabetes
-# Uses a pre-trained random forest as input
-# Conformal predictive systems (CPS) are used for uncertainty quantification
-# Probabilities for diabetes and prediabetes are estimated per leaf with CPS
+# Function to construct an decision tree (DT)
+# Predicts a continuous outcome (glycohemoglobin) using a pre-trained random forest
+# Estimates leaf-wise probabilities for prediabetes and diabetes via conformal predictive systems (CPS)
+# Provides uncertainty quantification through calibrated prediction intervals
+# Returns the DT, probability estimates per leaf, and multiple performance metrics
 
 get_dt <- function(data, instance, min.bucket = 0, significance_level = 0.1, ...){
   

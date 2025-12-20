@@ -8,7 +8,9 @@ get_cv_data <- function(data, current_fold, num_folds, repitition, ...){
   
   # Load data
   #----------------
-  data_dir <- "/imbs/home/kronziel/ART_uncertainty/data/nhanes_prepandemic_complete.csv"
+  current_path <- this.dir()
+  data_dir <- file.path(gsub("functions", "data", current_path),
+                        "nhanes_prepandemic_complete.csv")
   data_imp <- read.csv(data_dir)
   
   # Remove ID and prediabetes column

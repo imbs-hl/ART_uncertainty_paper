@@ -66,7 +66,6 @@ pacman::p_load(
   cowplot
 )
 
-
 #------------------------------------------------------------------------------
 # Load and prepare results data
 #------------------------------------------------------------------------------
@@ -76,4 +75,216 @@ pacman::p_load(
 data_imp      <- readRDS(file.path("data", "registry_art_cps_df_paper.rds"))
 data_list_imp <- readRDS(file.path("data", "list_registry_art_cps_paper.rds"))
 
-# Result
+# Results produced manually via `02calculate_results.R`
+# data_imp      <- readRDS(file.path("data", "registry_art_cps_df.rds"))
+# data_list_imp <- readRDS(file.path("data", "list_registry_art_cps.rds"))
+
+
+# Harmonize method names (consistent labeling across plots)
+data <- data_imp %>%
+  mutate(
+    method = case_when(
+      method == "Regression ART + CPS" ~ "ART + CPS",
+      method == "Regression DT + CPS"  ~ "DT + CPS",
+      method == "Regression ART + Probability ARTs" ~ "Mult. ARTs",
+      method == "Regression DT + Probability DTs"  ~ "Mult. DTs",
+      TRUE ~ method
+    )
+  )
+
+
+#------------------------------------------------------------------------------
+# Load NHANES data used for stability evaluation
+#------------------------------------------------------------------------------
+# Predictions are computed on the full dataset to ensure fairness:
+# all models were trained on equally sized training samples
+
+nhannes_data <- nhannes_data_imp %>%
+  select(-SEQN, -prediabetes)
+
+
+#------------------------------------------------------------------------------
+# Extract trees and prediction objects
+#------------------------------------------------------------------------------
+# List of fitted regression trees
+trees <- lapply(data_list_imp, function(x) x$tree)
+
+# Probability trees
+trees5.7 <- lapply(data_list_imp, function(x) x$art_prob5.7)
+trees6.5 <- lapply(data_list_imp, function(x) x$art_prob6.5)
+
+# Node-level probability tables
+pred_prob <- lapply(data_list_imp, function(x) x$prob_df)
+
+
+#------------------------------------------------------------------------------
+# Hyperparameter configuration
+#------------------------------------------------------------------------------
+metric_values       <- "splitting variables"
+min.bucket_values   <- 150
+probs_quantiles     <- ""
+method_values       <- c("ART + CPS", "DT + CPS")
+
+num_features <- ncol(nhannes_data) - 1
+
+
+#------------------------------------------------------------------------------
+# Stability analysis: glycohemoglobin (regression)
+#------------------------------------------------------------------------------
+# Distance between predictions and between splitting-variable usage
+dist_cps <- data.frame(
+  repitition = NA, method = NA, metric = NA, min.bucket = NA,
+  dist_pred = NA, dist_sv = NA, type = NA,
+  t(rep(NA, 9)), t(rep(NA, 9))
+)
+
+for (i in 1:max(data$repitition)) {
+  for (metric in metric_values) {
+    for (min.bucket in min.bucket_values) {
+      for (method in method_values) {
+        
+        # Identify models for this configuration
+        ids <- which(
+          data$method == method &
+            data$repitition == i &
+            (data$metric == metric | is.na(data$metric)) &
+            data$min.bucket == min.bucket &
+            (data$probs_quantiles == "" | is.na(data$probs_quantiles))
+        )
+        
+        trees_sel <- trees[ids]
+        
+        #--------------------------------------------------------------
+        # Prediction distance (MSE between model predictions)
+        #--------------------------------------------------------------
+        preds <- lapply(trees_sel, function(x) {
+          predict(x, data = nhannes_data, predict.all = TRUE)$predictions
+        }) %>% bind_cols()
+        
+        dist_pred <- mean(
+          as.matrix(dist(t(preds), method = "euclidean"))^2 /
+            nrow(nhannes_data)
+        )
+        
+        #--------------------------------------------------------------
+        # Splitting-variable distance
+        #--------------------------------------------------------------
+        used_vars <- lapply(trees_sel, function(x) {
+          sv <- treeInfo(x)$splitvarID
+          u  <- rep(0, num_features)
+          u[sv + 1] <- 1
+          u
+        }) %>% bind_cols()
+        
+        dist_sv <- mean(
+          as.matrix(dist(t(used_vars), method = "euclidean"))^2 /
+            num_features
+        )
+        
+        # Mean usage per variable
+        used_vars_mean <- rowMeans(used_vars)
+        
+        # Absolute usage counts
+        used_vars_abs <- lapply(trees_sel, function(x) {
+          tabulate(treeInfo(x)$splitvarID + 1, nbins = 9)
+        }) %>% bind_cols()
+        
+        # Store results
+        dist_cps <- rbind(
+          dist_cps,
+          data.frame(
+            repitition = i,
+            method = method,
+            metric = metric,
+            min.bucket = min.bucket,
+            dist_pred = dist_pred,
+            dist_sv = dist_sv,
+            type = "glycohemoglobin",
+            t(used_vars_mean),
+            t(used_vars_abs)
+          )
+        )
+      }
+    }
+  }
+}
+
+
+#------------------------------------------------------------------------------
+# Probability outcomes: prediabetes and diabetes
+#------------------------------------------------------------------------------
+nhannes_data_5.7 <- nhannes_data %>%
+  mutate(glycohemoglobin = ifelse(glycohemoglobin >= 5.7, 1, 0)) %>%
+  select(-glycohemoglobin)
+
+nhannes_data_6.5 <- nhannes_data %>%
+  mutate(glycohemoglobin = ifelse(glycohemoglobin >= 6.5, 1, 0)) %>%
+  select(-glycohemoglobin)
+
+
+# Initialize result containers
+dist_prediabetes <- data.frame(repitition = NA, method = NA, metric = NA,
+                               min.bucket = NA, dist_pred = NA,
+                               dist_sv = NA, type = NA)
+
+dist_diabetes <- dist_prediabetes
+
+
+#------------------------------------------------------------------------------
+# Combine all stability results
+#------------------------------------------------------------------------------
+dist_df <- bind_rows(
+  dist_cps[-1, ],
+  dist_prediabetes[-1, ],
+  dist_diabetes[-1, ]
+)
+
+
+#------------------------------------------------------------------------------
+# Plot stability results
+#------------------------------------------------------------------------------
+plot_dist_pred <- ggplot(dist_df, aes(x = method, y = dist_pred, col = method)) +
+  geom_boxplot() +
+  facet_grid(
+    . ~ factor(type,
+               levels = c("glycohemoglobin", "prediabetes", "diabetes"))
+  ) +
+  theme_bw() +
+  labs(x = "", y = "Prediction distance") +
+  theme(
+    text = element_text(size = 15),
+    legend.position = "none",
+    strip.text = element_text(size = 18)
+  )
+
+plot_dist_sv <- ggplot(dist_df, aes(x = method, y = dist_sv, col = method)) +
+  geom_boxplot() +
+  facet_grid(
+    . ~ factor(type,
+               levels = c("glycohemoglobin", "prediabetes", "diabetes"))
+  ) +
+  theme_bw() +
+  labs(x = "", y = "SV distance") +
+  theme(
+    text = element_text(size = 15),
+    legend.position = "none",
+    strip.text = element_text(size = 18)
+  )
+
+plot_dist <- plot_grid(plot_dist_sv, plot_dist_pred,
+                       labels = "AUTO", nrow = 2)
+
+plot_dist
+
+
+#------------------------------------------------------------------------------
+# Save figure
+#------------------------------------------------------------------------------
+ggsave(
+  plot_dist,
+  filename = file.path(out_dir, "fig3_stability.png"),
+  width = 33,
+  height = 14,
+  units = "cm",
+  dpi = 200
+)

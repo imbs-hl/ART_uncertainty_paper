@@ -23,6 +23,8 @@
 # - Single ARTs and DTs are trained for predicting all three outcomes: continuous outcomes (glycohemoglobin) and probabilities of prediabetes and diabetes
 # - Separate ARTs or DTs can be used for regression and probability outcomes individually.
 # - Performance metrics include MSE, Brier scores, interval coverage, tree depth, number of leaves, and variable usage.
+#
+# Author: Lea Kronziel
 #================================================================================
 
 

@@ -1,131 +1,193 @@
-#' With this script the figure 1 from "Uncertainty 
-#' quantification enhances the explainability of 
-#' artificial representative trees" can be reproduced.
+#' Reproduction of Figure 1 from:
+#' "Predicting Ordinal Outcome via Artificial Trees with Uncertainty Quantification"
+#'
+#' This script trains an Artificial Regression Tree (ART) based on a random forest
+#' and visualizes calibrated predictive intervals for glycohemoglobin.
+#'
+#' Prerequisites:
+#' - Run `01_prepare_data.R` beforehand to generate the preprocessed NHANES dataset.
+#' - The git repository must be cloned locally.
+#'
+#' Output:
+#' - A visualization of the ART including uncertainty quantification
+#'   is saved to the output directory.
+#'
+#' Author: Lea Kronziel
+#---------------------------------------
+
 #---------------------------------------
 # Define directories
-# Please define your main directory here. 
-# This should be the directory you cloned the git repository into.
+#---------------------------------------
+
+# Set main working directory (root of the cloned repository)
 main_dir <- getwd()
 setwd(main_dir)
 
-# Create and define proc directory
+# Create directory for intermediate processing results
 dir.create(file.path(main_dir, "proc"), showWarnings = FALSE)
 proc_dir <- file.path(main_dir, "proc")
-# Create and define output directory
+
+# Create directory for output (plots, results)
 dir.create(file.path(main_dir, "output"), showWarnings = FALSE)
 out_dir <- file.path(main_dir, "output")
 
+
 #---------------------------------------
-# Load libraries
-if (!"pacman" %in% installed.packages()){
+# Load required libraries
+#---------------------------------------
+
+# Install pacman if not available
+if (!"pacman" %in% installed.packages()) {
   install.packages("pacman")
 }
 
-pacman::p_load(ggplot2)
-pacman::p_load(gridExtra)
-pacman::p_load(ranger)
-pacman::p_load(devtools)
-pacman::p_load(rpart)
-pacman::p_load(dplyr)
-pacman::p_load(tidyr)
+# Load required packages
+pacman::p_load(
+  ggplot2,
+  gridExtra,
+  ranger,
+  devtools,
+  rpart,
+  dplyr,
+  tidyr
+)
 
-
-if("timbR" %in% installed.packages()){
+# Install and load timbR (development version if not installed)
+if ("timbR" %in% installed.packages()) {
   library(timbR)
-  warning("Please check, if timbR version 3.1 is installed.")
+  warning("Please verify that timbR version 3.3 is installed.")
 } else {
-  devtools::install_github("imbs-hl/timbR", "master")
+  devtools::install_github("imbs-hl/timbR", ref = "master")
   library(timbR)
 }
 
-#---------------------------------------
-# Functions to simulate the data sets
-source("functions/simulate_rf_setting_1.R")
 
 #---------------------------------------
-# Simulate the data from scenario 1
-# parameter of data set
-n         <- 1000
-n_test    <- 1000
-n_cal     <- 1000
-p         <- 100
-eps      <- 1
-
-# Parameter of random forest and ART
-num.trees <- 500
-mtry     <- sqrt(p)
-min_node_size <- c(100)
-metric   <- c("weighted splitting variables")
-imp.num.var <- c(5) 
-epsilon <- c(0.05)
-significance_level <- 0.05
-min.bucket <- 100
-
+# Import and prepare data
 #---------------------------------------
-# Build ART
-set.seed(1234)
 
-# If you want to use other settings please change also the input parameters
-instance <- simulate_rf_setting_1(data = n,
-                                  p_eff       = 5,
-                                  beta_eff    = 2,
-                                  n_test      = n_test,
-                                  n_cal       = n_cal, 
-                                  p           = p, 
-                                  num.trees   = num.trees,
-                                  eps         = eps,
-                                  mtry        = mtry,
-                                  min_node_size = min_node_size
+# Load preprocessed NHANES data
+nhannes_data_imp <- read.csv(
+  file.path("data", "nhanes_prepandemic_complete.csv")
 )
 
-## Exctract data from instance 
-test_dat       <- instance[[1]]
-rf             <- instance[[2]]
-params         <- instance[[3]]
-cal_dat        <- instance[[4]]
-effect_var_ids <- instance[[5]]
-noise_var_ids  <- instance[[6]]
-train_dat      <- instance[[7]]
-dependent_varname <- instance[[8]]
+# Remove ID variable and non-used outcome
+nhannes_data <- nhannes_data_imp %>%
+  select(-SEQN, -prediabetes)
 
-## Generate artificial rep tree
-rf_rep <- generate_tree(rf = rf, metric = metric, test_data = test_dat, train_data = train_dat, 
-                            importance.mode = TRUE, imp.num.var = imp.num.var, dependent_varname = dependent_varname,
-                            probs_quantiles = NULL, epsilon = epsilon,
-                            min.node.size = 100, num.splits = 3)
-
-tree_info <- treeInfo(rf_rep)
 
 #---------------------------------------
-# Calculate predictions for calibration and test data for uncertainty quantification
-y_cal <- cal_dat[,dependent_varname]
-y_test <- test_dat[,dependent_varname]
-y_cal_pred <- predict(rf_rep, cal_dat)$predictions
-y_test_pred <- predict(rf_rep, test_dat)$predictions
+# Split data into training, testing and calibration sets
+#---------------------------------------
+
+n <- nrow(nhannes_data)
+set.seed(123)
+
+# 50% training data
+train_ids <- sample(1:n, n * 0.5, replace = FALSE)
+
+# 25% test data
+test_ids <- sample(setdiff(1:n, train_ids), n * 0.25, replace = FALSE)
+
+# Assign datasets
+train_data <- nhannes_data[train_ids, ]
+test_data  <- nhannes_data[test_ids, ]
+cal_data   <- nhannes_data[-c(train_ids, test_ids), ]
+
 
 #---------------------------------------
-# Calibration using Mondrian inductive conformal prediction (ICP)
-# Get calibrated prediction for test data
-calibrated_mondrian_predictions <- timbR::get_calibrated_prediction_regression_mondrian(y_cal_pred = y_cal_pred, 
-                                                                                        y_cal = y_cal, 
-                                                                                        y_test_pred = y_test_pred, 
-                                                                                        significance_level = significance_level,
-                                                                                        tree = rf_rep,
-                                                                                        cal_data = cal_dat, 
-                                                                                        test_data = test_dat,
-                                                                                        dependent_varname = dependent_varname,
-                                                                                        show_node_id = TRUE
+# Train Random Forest model
+#---------------------------------------
+
+set.seed(123)
+
+# Random forest used as basis for ART generation
+rf <- ranger(
+  glycohemoglobin ~ .,
+  data = train_data,
+  min.node.size = nrow(train_data) * 0.1
 )
 
-# Round bounds to save space
-tree_info_conformal_mondrian_pred <- tree_info %>% left_join(unique(calibrated_mondrian_predictions)) %>% 
-  mutate(prediction = round(prediction, 2),
-         lower_bound = round(lower_bound, 2),
-         upper_bound = round(upper_bound, 2))
 
-# Save plot
-plot_tree(tree_info_df = tree_info_conformal_mondrian_pred, train_data_df = train_dat, test_data_df = test_dat, rf_list = rf_rep, tree_number = 1, 
-          dependent_var = "y",
-          show_sample_size = FALSE, show_prediction_nodes = FALSE, show_uncertainty = TRUE, show_coverage = TRUE, show_intervalwidth = TRUE,
-          vert_sep = 5, hor_sep = 5,
-          work_dir = out_dir, plot_name = "fig1_tree_scenario1_conformal_mondrian_prediction", colors = NULL)
+#---------------------------------------
+# ART + Conformal Predictive System (Splitting Variables)
+#---------------------------------------
+
+set.seed(123)
+
+# Generate Artificial Regression Tree (ART)
+# Note: This step may take 1–3 minutes due to dataset size
+art_SV <- generate_tree(
+  rf,
+  metric = "splitting variables",
+  train_data,
+  test_data = NULL,
+  dependent_varname = "glycohemoglobin",
+  min.bucket = 150
+)
+
+# Build calibrated predictive system using Mondrian CPS
+cpd <- get_calibrated_predictive_system_mondrian(
+  y_cal_pred  = predict(art_SV, cal_data)$predictions,
+  y_cal       = cal_data$glycohemoglobin,
+  y_test_pred = predict(art_SV, test_data)$predictions,
+  significance_level = 0.05,
+  interval_type = "two-tailed",
+  direction = NULL,
+  show_node_id = TRUE,
+  tree = art_SV,
+  cal_data = cal_data,
+  test_data = test_data,
+  dependent_varname = "glycohemoglobin"
+) %>%
+  mutate(nodeID = leaf - 1)
+
+
+#---------------------------------------
+# Prepare tree information for plotting
+#---------------------------------------
+
+tree_info_df <- treeInfo(art_SV) %>%
+  left_join(unique(cpd)) %>%
+  mutate(
+    lower_bound = round(lower_bound, 2),
+    upper_bound = round(upper_bound, 2),
+    prediction  = round(prediction, 2)
+  )
+
+
+#---------------------------------------
+# Plot ART with uncertainty quantification
+#---------------------------------------
+
+plot_tree(
+  tree_info_df      = tree_info_df,
+  train_data_df     = train_data,
+  test_data_df      = test_data,
+  cal_data_df       = cal_data,
+  rf_list           = art_SV,
+  tree_number       = 1,
+  dependent_var     = "glycohemoglobin",
+  threshold         = c(5.7, 6.5),
+  significance_level = 0.05,
+  interval_type     = "two-tailed",
+  direction         = NULL,
+  show_sample_size  = FALSE,
+  show_prediction_nodes = FALSE,
+  show_uncertainty  = TRUE,
+  show_coverage     = TRUE,
+  show_intervalwidth = TRUE,
+  show_cpd          = TRUE,
+  cpd_plot_width    = 35,
+  show_point_prediction = TRUE,
+  show_prediction_interval = TRUE,
+  vert_sep          = 15,
+  hor_sep           = 25,
+  work_dir          = out_dir,
+  plot_name         = "fig1_art",
+  colors            = NULL
+)
+
+#---------------------------------------
+# End of script
+#---------------------------------------

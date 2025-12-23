@@ -1,9 +1,9 @@
 #===============================================================================
-# Reproduction of Figure 2 from:
+# Reproduction of Figure 4 from:
 # "Predicting Ordinal Outcome via Artificial Trees with Uncertainty Quantification"
 #===============================================================================
 #
-# This script reproduces Figure 2 of the manuscript by comparing the
+# This script reproduces Figure 1 of the manuscript by comparing the
 # interpretability of different tree-based models.
 #
 # Specifically, it:

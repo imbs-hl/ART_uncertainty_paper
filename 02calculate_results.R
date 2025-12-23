@@ -32,7 +32,7 @@
 #----------------
 
 if("timbR" %in% installed.packages()){
-  warning("Please check, if timbR with at least version 3.1 is installed.")
+  warning("Please check, if timbR with at least version 3.3 is installed.")
   library(timbR)
 } else {
   devtools::install_github("imbs-hl/timbR", "master")
@@ -83,8 +83,8 @@ source("functions/get_rf_variable_usage.R")
 # Reduced setting selected here, values used in paper are commented behind each parameter
 
 # Number of folds of cv and number of repeated cvs
-num_folds <- 5 # 10
-repitition <- c(1:3)# c(1:20)
+num_folds <- 4 # 10
+repitition <- c(1:2)# c(1:20)
 
 # DT and ART hyperparameters
 # ART: Distance metric (ART vs. RF)
@@ -97,7 +97,7 @@ probs_quantiles <- list(c(0.25,0.5,0.75)) # list(c(0.25,0.5,0.75), c(0.1,0.2,0.3
 epsilon <- c(0)
 
 # ART and DT: Stop tree growth so that at least min.bucket observations of train data end in each leaf
-min.bucket <- c(250) # c(150, 200, 250)
+min.bucket <- c(150) # c(150, 200, 250)
 
 # ART and DT: significance level for prediction interval of CPS
 significance_level <- 0.05
@@ -186,7 +186,7 @@ summarizeExperiments(reg = reg)
 # Please change this if you have a batch system. 
 submitJobs(ids = ids, reg = reg)
 
-#' With pre selected parameters it will take around 5 min to complete.
+#' With pre selected parameters it will take around 5-10 min to complete.
 #' Please note, the run times for the other parameter settings could differ. 
 #' Anyway simulating data for the figures in the paper will probably run for several days on you computer. 
 

@@ -7,10 +7,9 @@
 # and *interpretability* of different tree-based models.
 #
 # Specifically, it:
-# - Loads precomputed experiment results (precalculated disance measures as data 
-#   with trees is too big for github, please send an email if you want access to 
-#   all trees, train, test, and validation data)
-# - Compares model stability across repetitions and folds
+# - Loads precomputed experiment results (distance measures are precomputed
+#   since storing all trees exceeds GitHub size limits; please email for full access)
+# - Compares model stability across repetitions and cross-validation folds
 # - Computes distances between predictions and splitting-variable usage
 # - Visualizes stability metrics using boxplots
 #
@@ -23,10 +22,11 @@
 # Prerequisites:
 # - Run `01_prepare_data.R` to generate the NHANES dataset
 # - Run `02calculate_results.R` OR use the provided paper results
+# - Due to runtime constraints, probs_quantiles = c(0.25, 0.5, 0.75) is used by default
 # - Clone the git repository locally
 #
 # Output:
-# - Stability plots (prediction distance & SV distance)
+# - Stability plots (prediction distance and SV distance)
 #   saved to the output directory
 #
 # Author: Lea Kronziel
@@ -74,17 +74,18 @@ pacman::p_load(
 # Choose ONE of the following result sources
 
 # Results used in the paper
-dist_df      <- readRDS(file.path("data", "registry_art_cps_df_paper_fig3.rds"))
-# For results from paper precalculated disances are used
-# If you want to build the plots with your own results uncomment the following code
+dist_df <- readRDS(file.path("data", "registry_art_cps_df_paper_fig3.rds"))
 
+# For paper results, precomputed distance measures are used.
+# If you want to recreate the plots using your own results, uncomment below.
+# Due to runtime constraints, probs_quantiles = c(0.25, 0.5, 0.75) is used by default.
 
-# Results produced manually via `02calculate_results.R`
+# # Results produced manually via `02calculate_results.R`
 # data_imp      <- readRDS(file.path("data", "registry_art_cps_df.rds"))
 # data_list_imp <- readRDS(file.path("data", "list_registry_art_cps.rds"))
-
 # 
-# # Harmonize method names (consistent labeling across plots)
+# 
+# # Harmonize method names for consistent labeling across plots
 # data <- data_imp %>%
 #   mutate(
 #     method = case_when(
@@ -96,14 +97,14 @@ dist_df      <- readRDS(file.path("data", "registry_art_cps_df_paper_fig3.rds"))
 #     )
 #   )
 # 
+# nhanes_imp <- read.csv(file.path("data", "nhanes_prepandemic_complete.csv"))
 # 
 # #------------------------------------------------------------------------------
 # # Load NHANES data used for stability evaluation
 # #------------------------------------------------------------------------------
-# # Predictions are computed on the full dataset to ensure fairness:
-# # all models were trained on equally sized training samples
-# 
-# nhannes_data <- nhannes_data_imp %>%
+# # Predictions are computed on the full dataset to ensure fairness,
+# # since all models were trained on equally sized training samples.
+# nhanes_data <- nhanes_imp %>%
 #   select(-SEQN, -prediabetes)
 # 
 # 
@@ -117,99 +118,81 @@ dist_df      <- readRDS(file.path("data", "registry_art_cps_df_paper_fig3.rds"))
 # trees5.7 <- lapply(data_list_imp, function(x) x$art_prob5.7)
 # trees6.5 <- lapply(data_list_imp, function(x) x$art_prob6.5)
 # 
-# # Node-level probability tables
+# # Node-level probability tables from RF
 # pred_prob <- lapply(data_list_imp, function(x) x$prob_df)
 # 
 # 
 # #------------------------------------------------------------------------------
 # # Hyperparameter configuration
 # #------------------------------------------------------------------------------
-# metric_values       <- "splitting variables"
-# min.bucket_values   <- 150
-# probs_quantiles     <- ""
-# method_values       <- c("ART + CPS", "DT + CPS")
-# 
-# num_features <- ncol(nhannes_data) - 1
+# method_values <- c("ART + CPS", "DT + CPS")
+# num_features  <- ncol(nhanes_data) - 1
 # 
 # 
 # #------------------------------------------------------------------------------
-# # Stability analysis: glycohemoglobin (regression)
+# # Stability analysis: glycohemoglobin (regression outcome)
 # #------------------------------------------------------------------------------
 # # Distance between predictions and between splitting-variable usage
 # dist_cps <- data.frame(
 #   repitition = NA, method = NA, metric = NA, min.bucket = NA,
-#   dist_pred = NA, dist_sv = NA, type = NA,
-#   t(rep(NA, 9)), t(rep(NA, 9))
+#   probs_quantiles = NA, dist_pred = NA, dist_sv = NA, type = NA
 # )
 # 
 # for (i in 1:max(data$repitition)) {
-#   for (metric in metric_values) {
-#     for (min.bucket in min.bucket_values) {
-#       for (method in method_values) {
-#         
-#         # Identify models for this configuration
-#         ids <- which(
-#           data$method == method &
-#             data$repitition == i &
-#             (data$metric == metric | is.na(data$metric)) &
-#             data$min.bucket == min.bucket &
-#             (data$probs_quantiles == "" | is.na(data$probs_quantiles))
-#         )
-#         
-#         trees_sel <- trees[ids]
-#         
-#         #--------------------------------------------------------------
-#         # Prediction distance (MSE between model predictions)
-#         #--------------------------------------------------------------
-#         preds <- lapply(trees_sel, function(x) {
-#           predict(x, data = nhannes_data, predict.all = TRUE)$predictions
-#         }) %>% bind_cols()
-#         
-#         dist_pred <- mean(
-#           as.matrix(dist(t(preds), method = "euclidean"))^2 /
-#             nrow(nhannes_data)
-#         )
-#         
-#         #--------------------------------------------------------------
-#         # Splitting-variable distance
-#         #--------------------------------------------------------------
-#         used_vars <- lapply(trees_sel, function(x) {
-#           sv <- treeInfo(x)$splitvarID
-#           u  <- rep(0, num_features)
-#           u[sv + 1] <- 1
-#           u
-#         }) %>% bind_cols()
-#         
-#         dist_sv <- mean(
-#           as.matrix(dist(t(used_vars), method = "euclidean"))^2 /
-#             num_features
-#         )
-#         
-#         # Mean usage per variable
-#         used_vars_mean <- rowMeans(used_vars)
-#         
-#         # Absolute usage counts
-#         used_vars_abs <- lapply(trees_sel, function(x) {
-#           tabulate(treeInfo(x)$splitvarID + 1, nbins = 9)
-#         }) %>% bind_cols()
-#         
-#         # Store results
-#         dist_cps <- rbind(
-#           dist_cps,
-#           data.frame(
-#             repitition = i,
-#             method = method,
-#             metric = metric,
-#             min.bucket = min.bucket,
-#             dist_pred = dist_pred,
-#             dist_sv = dist_sv,
-#             type = "glycohemoglobin",
-#             t(used_vars_mean),
-#             t(used_vars_abs)
-#           )
-#         )
-#       }
-#     }
+#   for (method in method_values) {
+#     
+#     # Identify models for this configuration
+#     ids <- which(
+#       data$method == method &
+#         data$repitition == i &
+#         (data$metric == "splitting variables" | is.na(data$metric)) &
+#         data$min.bucket == 150 &
+#         (data$probs_quantiles == "0.25,0.5,0.75" | is.na(data$probs_quantiles))
+#     )
+#     
+#     trees_sel <- trees[ids]
+#     
+#     #--------------------------------------------------------------
+#     # Prediction distance (MSE between model predictions)
+#     #--------------------------------------------------------------
+#     preds <- lapply(trees_sel, function(x) {
+#       predict(x, data = nhanes_data, predict.all = TRUE)$predictions
+#     }) %>% bind_cols()
+#     
+#     dist_pred <- mean(
+#       as.matrix(dist(t(preds), method = "euclidean"))^2 /
+#         nrow(nhanes_data)
+#     )
+#     
+#     #--------------------------------------------------------------
+#     # Splitting-variable distance
+#     #--------------------------------------------------------------
+#     used_vars <- lapply(trees_sel, function(x) {
+#       sv <- treeInfo(x)$splitvarID
+#       u  <- rep(0, num_features)
+#       u[sv + 1] <- 1
+#       u
+#     }) %>% bind_cols()
+#     
+#     dist_sv <- mean(
+#       as.matrix(dist(t(used_vars), method = "euclidean"))^2 /
+#         num_features
+#     )
+#     
+#     # Store results
+#     dist_cps <- rbind(
+#       dist_cps,
+#       data.frame(
+#         repitition = i,
+#         method = method,
+#         metric = "splitting variables",
+#         min.bucket = 150,
+#         probs_quantiles = "0.25,0.5,0.75",
+#         dist_pred = dist_pred,
+#         dist_sv = dist_sv,
+#         type = "glycohemoglobin"
+#       )
+#     )
 #   }
 # }
 # 
@@ -217,21 +200,202 @@ dist_df      <- readRDS(file.path("data", "registry_art_cps_df_paper_fig3.rds"))
 # #------------------------------------------------------------------------------
 # # Probability outcomes: prediabetes and diabetes
 # #------------------------------------------------------------------------------
-# nhannes_data_5.7 <- nhannes_data %>%
+# nhanes_data_5.7 <- nhanes_data %>%
 #   mutate(glycohemoglobin = ifelse(glycohemoglobin >= 5.7, 1, 0)) %>%
 #   select(-glycohemoglobin)
 # 
-# nhannes_data_6.5 <- nhannes_data %>%
+# nhanes_data_6.5 <- nhanes_data %>%
 #   mutate(glycohemoglobin = ifelse(glycohemoglobin >= 6.5, 1, 0)) %>%
 #   select(-glycohemoglobin)
 # 
 # 
 # # Initialize result containers
-# dist_prediabetes <- data.frame(repitition = NA, method = NA, metric = NA,
-#                                min.bucket = NA, dist_pred = NA,
-#                                dist_sv = NA, type = NA)
+# dist_prediabetes <- data.frame(
+#   repitition = NA, method = NA, metric = NA, min.bucket = NA,
+#   probs_quantiles = NA, dist_pred = NA, dist_sv = NA, type = NA
+# )
 # 
 # dist_diabetes <- dist_prediabetes
+# 
+# 
+# #------------------------------------------------------------------------------
+# # ARTs and DTs with CPS
+# #------------------------------------------------------------------------------
+# for (i in 1:max(data$repitition)) {
+#   for (method in method_values) {
+#     
+#     # Identify models and corresponding prediction objects
+#     ids_arts <- which(
+#       data$method == method &
+#         data$repitition == i &
+#         data$min.bucket == 150 &
+#         (data$probs_quantiles == "0.25,0.5,0.75" | is.na(data$probs_quantiles)) &
+#         (data$metric == "splitting variables" | is.na(data$metric))
+#     )
+#     
+#     trees_arts     <- trees[ids_arts]
+#     pred_prob_arts <- pred_prob[ids_arts]
+#     
+#     probs_df5.7 <- matrix(NA, nrow = nrow(nhanes_data), ncol = max(data$fold))
+#     probs_df6.5 <- matrix(NA, nrow = nrow(nhanes_data), ncol = max(data$fold))
+#     
+#     for (j in 1:max(data$fold)) {
+#       
+#       # Determine terminal nodes for each observation
+#       nodes_hnannes <- predict(
+#         data = nhanes_data,
+#         trees_arts[[j]],
+#         type = "terminalNodes"
+#       )$predictions
+#       
+#       # Compute predicted probabilities for each model
+#       pred_df <- data.frame(
+#         nodeID = nodes_hnannes,
+#         glycohemoglobin = nhanes_data$glycohemoglobin
+#       ) %>%
+#         left_join(pred_prob_arts[[j]])
+#       
+#       probs_df5.7[, j] <- pred_df$prob5.7
+#       probs_df6.5[, j] <- pred_df$prob6.5
+#     }
+#     
+#     # Compute prediction distances
+#     dist_pred5.7 <- mean(
+#       as.matrix(dist(t(probs_df5.7), method = "euclidian"))^2 /
+#         nrow(nhanes_data)
+#     )
+#     dist_pred6.5 <- mean(
+#       as.matrix(dist(t(probs_df6.5), method = "euclidian"))^2 /
+#         nrow(nhanes_data)
+#     )
+#     
+#     # Compute splitting-variable distance
+#     used_variables <- lapply(trees_arts, function(x) {
+#       splitting_variables <- treeInfo(x)$splitvarID
+#       fu <- rep(0, num_features)
+#       fu[splitting_variables + 1] <- 1
+#       fu
+#     }) %>% bind_cols()
+#     
+#     dist_sv <- mean(
+#       as.matrix(dist(t(as.matrix(used_variables)), method = "euclidian"))^2 /
+#         num_features
+#     )
+#     
+#     dist_prediabetes <- rbind(
+#       dist_prediabetes,
+#       data.frame(
+#         repitition = i, method = method,
+#         metric = "splitting variables", min.bucket = 150,
+#         probs_quantiles = "0.25,0.5,0.75",
+#         dist_pred = dist_pred5.7,
+#         dist_sv = dist_sv,
+#         type = "prediabetes"
+#       )
+#     )
+#     
+#     dist_diabetes <- rbind(
+#       dist_diabetes,
+#       data.frame(
+#         repitition = i, method = method,
+#         metric = "splitting variables", min.bucket = 150,
+#         probs_quantiles = "0.25,0.5,0.75",
+#         dist_pred = dist_pred6.5,
+#         dist_sv = dist_sv,
+#         type = "diabetes"
+#       )
+#     )
+#   }
+# }
+# 
+# 
+# #------------------------------------------------------------------------------
+# # Multiple ARTs and DTs
+# #------------------------------------------------------------------------------
+# for (i in 1:max(data$repitition)) {
+#   for (method in c("Mult. ARTs", "Mult. DTs")) {
+#     
+#     # Identify models for this configuration
+#     ids_arts <- which(
+#       data$method == method &
+#         data$repitition == i &
+#         data$min.bucket == 150 &
+#         (data$probs_quantiles == "0.25,0.5,0.75" | is.na(data$probs_quantiles)) &
+#         (data$metric == "splitting variables" | is.na(data$metric))
+#     )
+#     
+#     trees_arts     <- trees[ids_arts]
+#     trees_arts5.7  <- trees5.7[ids_arts]
+#     trees_arts6.5  <- trees6.5[ids_arts]
+#     
+#     # Compute predicted probabilities for all models
+#     pred5.7 <- lapply(trees_arts5.7, function(x) {
+#       predict(x, data = nhanes_data_5.7)$predictions[, 2]
+#     }) %>% bind_cols()
+#     
+#     pred6.5 <- lapply(trees_arts6.5, function(x) {
+#       predict(x, data = nhanes_data_6.5)$predictions[, 2]
+#     }) %>% bind_cols()
+#     
+#     # Compute prediction distances
+#     dist_pred_prob_arts_5.7 <- mean(
+#       as.matrix(dist(t(pred5.7), method = "euclidian"))^2 /
+#         nrow(nhanes_data)
+#     )
+#     dist_pred_prob_arts_6.5 <- mean(
+#       as.matrix(dist(t(pred6.5), method = "euclidian"))^2 /
+#         nrow(nhanes_data)
+#     )
+#     
+#     # Compute splitting-variable distances
+#     used_variables5.7 <- lapply(trees_arts5.7, function(x) {
+#       sv <- treeInfo(x)$splitvarID
+#       fu <- rep(0, num_features)
+#       fu[sv + 1] <- 1
+#       fu
+#     }) %>% bind_cols()
+#     
+#     used_variables6.5 <- lapply(trees_arts6.5, function(x) {
+#       sv <- treeInfo(x)$splitvarID
+#       fu <- rep(0, num_features)
+#       fu[sv + 1] <- 1
+#       fu
+#     }) %>% bind_cols()
+#     
+#     dist_sv_prob_dts5.7 <- mean(
+#       as.matrix(dist(t(as.matrix(used_variables5.7)), method = "euclidian"))^2 /
+#         num_features
+#     )
+#     dist_sv_prob_dts6.5 <- mean(
+#       as.matrix(dist(t(as.matrix(used_variables6.5)), method = "euclidian"))^2 /
+#         num_features
+#     )
+#     
+#     dist_prediabetes <- rbind(
+#       dist_prediabetes,
+#       data.frame(
+#         repitition = i, method = method,
+#         metric = "splitting variables", min.bucket = 150,
+#         probs_quantiles = "0.25,0.5,0.75",
+#         dist_pred = dist_pred_prob_arts_5.7,
+#         dist_sv = dist_sv_prob_dts5.7,
+#         type = "prediabetes"
+#       )
+#     )
+#     
+#     dist_diabetes <- rbind(
+#       dist_diabetes,
+#       data.frame(
+#         repitition = i, method = method,
+#         metric = "splitting variables", min.bucket = 150,
+#         probs_quantiles = "0.25,0.5,0.75",
+#         dist_pred = dist_pred_prob_arts_6.5,
+#         dist_sv = dist_sv_prob_dts6.5,
+#         type = "diabetes"
+#       )
+#     )
+#   }
+# }
 # 
 # 
 # #------------------------------------------------------------------------------
@@ -247,51 +411,55 @@ dist_df      <- readRDS(file.path("data", "registry_art_cps_df_paper_fig3.rds"))
 #------------------------------------------------------------------------------
 # Plot stability results
 #------------------------------------------------------------------------------
-
-plot_dist_pred <- ggplot(dist_df, aes(x = method, y = dist_pred, col = method))+#, col = factor(min.bucket)))+
+plot_dist_pred <- ggplot(dist_df, aes(x = method, y = dist_pred, col = method)) +
   geom_boxplot() +
-  facet_grid(.~factor(type, 
-                      labels=c("glycohemoglobin", "prediabetes", "diabetes"), 
-                      levels=c("glycohemoglobin", "prediabetes", "diabetes")), scales = "free_x") +
+  facet_grid(
+    . ~ factor(
+      type,
+      labels = c("glycohemoglobin", "prediabetes", "diabetes"),
+      levels = c("glycohemoglobin", "prediabetes", "diabetes")
+    ),
+    scales = "free_x"
+  ) +
   theme_bw() +
-  labs(x = "",
-       y = "Prediction distance")+
-  theme(text = element_text(size = 15), 
-        legend.text = element_text(size = 14),
-        legend.title = element_text(size = 14),
-        legend.key.size = unit(0.6, 'cm'),
-        strip.text.y = element_text(size = 18),
-        strip.text.x = element_text(size = 18),
-        legend.position = "none") +
-  scale_color_manual(values = c(rgb(203,81,25, maxColorValue = 255),
-                                rgb(0,75,90, maxColorValue = 255),
-                                rgb(255, 150, 90, maxColorValue = 255),
-                                rgb(80, 180, 210, maxColorValue = 255))) 
+  labs(x = "", y = "Prediction distance") +
+  theme(
+    text = element_text(size = 15),
+    strip.text = element_text(size = 18),
+    legend.position = "none"
+  ) +
+  scale_color_manual(values = c(
+    rgb(203, 81, 25, maxColorValue = 255),
+    rgb(0, 75, 90, maxColorValue = 255),
+    rgb(255, 150, 90, maxColorValue = 255),
+    rgb(80, 180, 210, maxColorValue = 255)
+  ))
 
-
-plot_dist_sv <- ggplot(dist_df, aes(x = method, y = dist_sv, col = method))+#, col = factor(min.bucket)))+
+plot_dist_sv <- ggplot(dist_df, aes(x = method, y = dist_sv, col = method)) +
   geom_boxplot() +
-  facet_grid(.~factor(type, 
-                      labels=c("glycohemoglobin", "prediabetes", "diabetes"), 
-                      levels=c("glycohemoglobin", "prediabetes", "diabetes")), scales = "free_x") +
+  facet_grid(
+    . ~ factor(
+      type,
+      labels = c("glycohemoglobin", "prediabetes", "diabetes"),
+      levels = c("glycohemoglobin", "prediabetes", "diabetes")
+    ),
+    scales = "free_x"
+  ) +
   theme_bw() +
-  labs(x = "",
-       y = "SV distance")+
-  theme(text = element_text(size = 15), 
-        legend.text = element_text(size = 14),
-        legend.title = element_text(size = 14),
-        legend.key.size = unit(0.6, 'cm'),
-        strip.text.y = element_text(size = 18),
-        strip.text.x = element_text(size = 18),
-        legend.position = "none") +
-  scale_color_manual(values = c(rgb(203,81,25, maxColorValue = 255),
-                                rgb(0,75,90, maxColorValue = 255),
-                                rgb(255, 150, 90, maxColorValue = 255),
-                                rgb(80, 180, 210, maxColorValue = 255))) 
+  labs(x = "", y = "SV distance") +
+  theme(
+    text = element_text(size = 15),
+    strip.text = element_text(size = 18),
+    legend.position = "none"
+  ) +
+  scale_color_manual(values = c(
+    rgb(203, 81, 25, maxColorValue = 255),
+    rgb(0, 75, 90, maxColorValue = 255),
+    rgb(255, 150, 90, maxColorValue = 255),
+    rgb(80, 180, 210, maxColorValue = 255)
+  ))
 
-plot_dist <- plot_grid(plot_dist_sv, plot_dist_pred,
-                       labels = "AUTO", nrow = 2)
-
+plot_dist <- plot_grid(plot_dist_sv, plot_dist_pred, labels = "AUTO", nrow = 2)
 plot_dist
 
 

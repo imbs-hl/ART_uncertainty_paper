@@ -71,10 +71,13 @@ pacman::p_load(
 # Choose one of the following result files:
 
 # Results used in the paper
-data_imp <- readRDS(file.path("data", "registry_art_cps_df_paper.rds"))
+data_imp <- readRDS(file.path("data", "registry_art_cps_df_paper.rds")) %>%
+  filter(probs_quantiles == "" | is.na(probs_quantiles))
 
 # Results produced manually via `02calculate_results.R`
-# data_imp <- readRDS(file.path("data", "registry_art_cps_df.rds"))
+# Due to runtime reasons probs_quantiles = c(0.25,0.5,0.75) is used in default setting, you may change this
+# data_imp <- readRDS(file.path("data", "registry_art_cps_df.rds")) %>%
+#   filter(probs_quantiles == "0.25,0.5,0.75" | is.na(probs_quantiles))
 
 
 # Harmonize method names and apply filtering consistent with the paper
@@ -89,20 +92,19 @@ data <- data_imp %>%
     )
   ) %>%
   filter(min.bucket == 150) %>%
-  filter(metric == "splitting variables" | is.na(metric)) %>%
-  filter(probs_quantiles == "" | is.na(probs_quantiles))
+  filter(metric == "splitting variables" | is.na(metric))
 
 
 #------------------------------------------------------------------------------
 # Interpretability metric 1: Maximum tree depth
 #------------------------------------------------------------------------------
+# Restrict to CPS-based models
 data_max_depth <- data %>%
   group_by(method, repitition, metric, probs_quantiles, min.bucket) %>%
-  summarise(
+  dplyr::summarise(
     max_depth = mean(max_depth, na.rm = TRUE),
     .groups = "drop"
   ) %>%
-  # Restrict to CPS-based models
   filter(grepl("CPS", method))
 
 plot_tree_depth <- ggplot(
@@ -135,7 +137,7 @@ plot_tree_depth
 #------------------------------------------------------------------------------
 data_num_leaves <- data %>%
   group_by(method, repitition, metric, probs_quantiles, min.bucket) %>%
-  summarise(
+  dplyr::summarise(
     num_leaves = mean(num_leaves, na.rm = TRUE),
     .groups = "drop"
   ) %>%

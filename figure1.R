@@ -116,7 +116,7 @@ rf <- ranger(
 set.seed(123)
 
 # Generate Artificial Regression Tree (ART)
-# Note: This step may take 1–3 minutes due to dataset size
+# Note: This step may take 1–3 minutes due to data set size
 art_SV <- generate_tree(
   rf,
   metric = "splitting variables",
@@ -184,7 +184,7 @@ plot_tree(
   vert_sep          = 15,
   hor_sep           = 25,
   work_dir          = out_dir,
-  plot_name         = "fig1_art",
+  plot_name         = "fig1_art_with_cps",
   colors            = NULL
 )
 

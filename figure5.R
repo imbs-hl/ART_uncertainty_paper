@@ -4,15 +4,17 @@
 #===============================================================================
 #
 # This script reproduces Figure 5 of the manuscript by comparing the
-# interpretability of different tree-based models.
+# predictive performance and uncertainty quality of different tree-based models.
 #
 # Specifically, it:
 # - Loads precomputed results for Artificial Regression Trees (ARTs),
 #   Decision Trees (DTs), and their CPS-enhanced variants
-# - Compares model complexity in terms of
-#     (i) maximum tree depth and
-#     (ii) number of terminal nodes
-# - Visualizes these metrics using boxplots
+# - Evaluates predictive accuracy using
+#     (i) RMSE for glycohemoglobin
+#     (ii) Brier scores for prediabetes and diabetes
+#     (iii) empirical coverage
+#     (iv) prediction interval width
+# - Visualizes all metrics using boxplots
 #
 # Prerequisites:
 # - Run `01_prepare_data.R` to generate the preprocessed NHANES dataset
@@ -20,7 +22,7 @@
 # - Clone the git repository locally
 #
 # Output:
-# - Figure showing interpretability metrics (tree depth and number of leaves)
+# - Figure showing prediction accuracy and uncertainty metrics
 #   saved to the output directory
 #
 # Author: Lea Kronziel
@@ -34,11 +36,11 @@
 main_dir <- getwd()
 setwd(main_dir)
 
-# Create and define processing directory
+# Create processing directory
 dir.create(file.path(main_dir, "proc"), showWarnings = FALSE)
 proc_dir <- file.path(main_dir, "proc")
 
-# Create and define output directory
+# Create output directory
 dir.create(file.path(main_dir, "output"), showWarnings = FALSE)
 out_dir <- file.path(main_dir, "output")
 
@@ -46,12 +48,10 @@ out_dir <- file.path(main_dir, "output")
 #------------------------------------------------------------------------------
 # Load required libraries
 #------------------------------------------------------------------------------
-# Install pacman if not available
 if (!"pacman" %in% installed.packages()) {
   install.packages("pacman")
 }
 
-# Load all required packages
 pacman::p_load(
   ggplot2,
   gridExtra,
@@ -68,16 +68,18 @@ pacman::p_load(
 #------------------------------------------------------------------------------
 # Load and prepare results data
 #------------------------------------------------------------------------------
-# Choose one of the following result files:
-
+# Choose ONE of the following result files:
 # Results used in the paper
-data_imp <- readRDS(file.path("data", "registry_art_cps_df_paper.rds"))
+data_imp <- readRDS(file.path("data", "registry_art_cps_df_paper.rds")) %>%
+  filter(probs_quantiles == "" | is.na(probs_quantiles))
 
 # Results produced manually via `02calculate_results.R`
-# data_imp <- readRDS(file.path("data", "registry_art_cps_df.rds"))
+# Due to runtime reasons probs_quantiles = c(0.25,0.5,0.75) is used in default setting, you may change this
+# data_imp <- readRDS(file.path("data", "registry_art_cps_df.rds")) %>%
+#   filter(probs_quantiles == "0.25,0.5,0.75" | is.na(probs_quantiles))
 
 
-# Harmonize method names and apply filtering consistent with the paper
+# Harmonize method names and apply paper-consistent filtering
 data <- data_imp %>%
   mutate(
     method = case_when(
@@ -89,147 +91,169 @@ data <- data_imp %>%
     )
   ) %>%
   filter(min.bucket == 150) %>%
-  filter(metric == "splitting variables" | is.na(metric)) %>%
-  filter(probs_quantiles == "" | is.na(probs_quantiles))
+  filter(metric == "splitting variables" | is.na(metric))
 
 
-# MSE
-#----------------
-# pro repitition gemittelt
-# Regressionbäume bei + CPs und ohne sind gleich, deswegen reichen 2 Abbildungen, einmal ARTs und einmal DTs
-# RF als Vergleich
-data_mse <- data %>% 
-  # bind_rows(., data.frame(method = "RF", 
-  #                         data %>% 
-  #                           filter(method == "DT + CPS") %>% 
-  #                           select(mse_test_dat_rf, repitition) %>% 
-  #                           dplyr::rename(mse_test_dat_tree = mse_test_dat_rf))) %>% 
+#------------------------------------------------------------------------------
+# Predictive accuracy: RMSE (glycohemoglobin)
+#------------------------------------------------------------------------------
+# RMSE is averaged per repetition
+# Regression trees with and without CPS are identical, therefore
+# only ART + CPS and DT + CPS are shown (plus RF as reference)
+
+data_rmse <- data %>%
   group_by(method, repitition, metric, probs_quantiles, min.bucket) %>%
-  mutate(rmse = sqrt(mse_test_dat_tree)) %>% 
-  filter(method == "ART + CPS" | method == "DT + CPS" | method == "RF") %>% 
-  dplyr::summarise(across(rmse, mean, na.rm = TRUE), .groups = "drop") # %>% 
-# mutate(method = case_when(method == "RF" ~ "RF",
-#                           method == "ART + CPS" ~ "ART",
-#                           method == "DT + CPS" ~ "DT"))
+  mutate(rmse = sqrt(mse_test_dat_tree)) %>%
+  filter(method %in% c("ART + CPS", "DT + CPS", "RF")) %>%
+  dplyr::summarise(dplyr::across(rmse, mean, na.rm = TRUE), .groups = "drop")
 
-plot_mse <- ggplot(data_mse, aes(x=method, y= rmse, col = method))+#, col = factor(min.bucket))) +
-  geom_boxplot()+
-  #facet_wrap(metric~., nrow=1) %>% 
-  theme_bw()+
-  labs(x = "",
-       y = "RMSE for glycohemoglobin")+
-  theme(text = element_text(size = 15), legend.position = "none",
-        legend.text = element_text(size = 14),
-        legend.title = element_text(size = 14),
-        legend.key.size = unit(0.6, 'cm'),
-        strip.text.y = element_text(size = 18),
-        strip.text.x = element_text(size = 18)) +
-  scale_color_manual(values = c(rgb(203,81,25, maxColorValue = 255),
-                                rgb(0,75,90, maxColorValue = 255))) 
-
-plot_mse
-
-
-# Brier Score
-#----------------
-data_brier_score5.7 <- data %>% 
-  group_by(method, repitition, metric, probs_quantiles, min.bucket) %>%
-  dplyr::summarise(across(brier_score5.7, mean, na.rm = TRUE), .groups = "drop")
-
-plot_brier_score_prediabetes <- ggplot(data_brier_score5.7, aes(x=method, y= brier_score5.7, col = method))+#, col = factor(min.bucket))) +
+plot_rmse <- ggplot(data_rmse, aes(x = method, y = rmse, col = method)) +
   geom_boxplot() +
   theme_bw() +
-  labs(x = "",
-       y = "Brier score for prediabetes")+
-  theme(text = element_text(size = 15), legend.position = "none",
-        legend.text = element_text(size = 14),
-        legend.title = element_text(size = 14),
-        legend.key.size = unit(0.6, 'cm'),
-        strip.text.y = element_text(size = 18),
-        strip.text.x = element_text(size = 18)) +
-  scale_color_manual(values = c(rgb(203,81,25, maxColorValue = 255),
-                                rgb(0,75,90, maxColorValue = 255),
-                                rgb(255, 150, 90, maxColorValue = 255),
-                                rgb(80, 180, 210, maxColorValue = 255))) 
-plot_brier_score_prediabetes
+  labs(x = "", y = "RMSE for glycohemoglobin") +
+  theme(
+    text = element_text(size = 15),
+    legend.position = "none"
+  ) +
+  scale_color_manual(values = c(
+    rgb(203, 81, 25, maxColorValue = 255),
+    rgb(0, 75, 90, maxColorValue = 255)
+  ))
 
-# ggsave(plot_brier_score_prediabetes, filename = file.path(plot_dir, "diabetes_accuracy_brier_score_prediabetes.png"), width = 15, height = 12, units = "cm", dpi = 200)
+plot_rmse
 
-data_brier_score6.5 <- data %>% 
+
+#------------------------------------------------------------------------------
+# Predictive accuracy: Brier score (prediabetes)
+#------------------------------------------------------------------------------
+data_brier_57 <- data %>%
   group_by(method, repitition, metric, probs_quantiles, min.bucket) %>%
-  dplyr::summarise(across(brier_score6.5, mean, na.rm = TRUE), .groups = "drop")
+  dplyr::summarise(dplyr::across(brier_score5.7, mean, na.rm = TRUE), .groups = "drop")
 
-plot_brier_score_diabetes <- ggplot(data_brier_score6.5, aes(x=method, y= brier_score6.5, col = method))+#, col = factor(min.bucket))) +
+plot_brier_prediabetes <- ggplot(
+  data_brier_57,
+  aes(x = method, y = brier_score5.7, col = method)
+) +
   geom_boxplot() +
   theme_bw() +
-  labs(x = "",
-       y = "Brier score on test data",
-       col = "min.bucket")+
-  theme(text = element_text(size = 15), legend.position = "none",
-        legend.text = element_text(size = 14),
-        legend.title = element_text(size = 14),
-        legend.key.size = unit(0.6, 'cm'),
-        strip.text.y = element_text(size = 18),
-        strip.text.x = element_text(size = 18)) +
-  scale_color_manual(values = c(rgb(203,81,25, maxColorValue = 255),
-                                rgb(0,75,90, maxColorValue = 255),
-                                rgb(255, 150, 90, maxColorValue = 255),
-                                rgb(80, 180, 210, maxColorValue = 255))) 
-plot_brier_score_diabetes
+  labs(x = "", y = "Brier score for prediabetes") +
+  theme(
+    text = element_text(size = 15),
+    legend.position = "none"
+  ) +
+  scale_color_manual(values = c(
+    rgb(203, 81, 25, maxColorValue = 255),
+    rgb(0, 75, 90, maxColorValue = 255),
+    rgb(255, 150, 90, maxColorValue = 255),
+    rgb(80, 180, 210, maxColorValue = 255)
+  ))
+
+plot_brier_prediabetes
 
 
-
-# Coverage
-#----------------
-data_coverage <- data %>% 
+#------------------------------------------------------------------------------
+# Predictive accuracy: Brier score (diabetes)
+#------------------------------------------------------------------------------
+data_brier_65 <- data %>%
   group_by(method, repitition, metric, probs_quantiles, min.bucket) %>%
-  dplyr::summarise(across(coverage, mean, na.rm = TRUE), .groups = "drop")
+  dplyr::summarise(dplyr::across(brier_score6.5, mean, na.rm = TRUE), .groups = "drop")
 
-plot_coverage <- ggplot(data_coverage %>% filter(grepl("CPS", method)), aes(x=method, y= coverage, col = method))+#, col = factor(min.bucket))) +
+plot_brier_diabetes <- ggplot(
+  data_brier_65,
+  aes(x = method, y = brier_score6.5, col = method)
+) +
   geom_boxplot() +
-  # facet_wrap(metric~., nrow=1) +
   theme_bw() +
-  labs(x = "",
-       y = "Coverage", 
-       col = "min.bucket")+
-  theme(text = element_text(size = 15), legend.position = "none",
-        legend.text = element_text(size = 14),
-        legend.title = element_text(size = 14),
-        legend.key.size = unit(0.6, 'cm'),
-        strip.text.y = element_text(size = 18),
-        strip.text.x = element_text(size = 18))+
-  geom_hline(yintercept = 0.95,
-             linetype = "dashed",
-             linewidth = 0.5)+
-  ylim(0.9,1) +
-  scale_color_manual(values = c(rgb(203,81,25, maxColorValue = 255),
-                                rgb(0,75,90, maxColorValue = 255))) 
+  labs(x = "", y = "Brier score for diabetes") +
+  theme(
+    text = element_text(size = 15),
+    legend.position = "none"
+  ) +
+  scale_color_manual(values = c(
+    rgb(203, 81, 25, maxColorValue = 255),
+    rgb(0, 75, 90, maxColorValue = 255),
+    rgb(255, 150, 90, maxColorValue = 255),
+    rgb(80, 180, 210, maxColorValue = 255)
+  ))
+
+plot_brier_diabetes
+
+
+#------------------------------------------------------------------------------
+# Uncertainty quality: empirical coverage
+#------------------------------------------------------------------------------
+data_coverage <- data %>%
+  group_by(method, repitition, metric, probs_quantiles, min.bucket) %>%
+  dplyr::summarise(dplyr::across(coverage, mean, na.rm = TRUE), .groups = "drop")
+
+plot_coverage <- ggplot(
+  data_coverage %>% filter(grepl("CPS", method)),
+  aes(x = method, y = coverage, col = method)
+) +
+  geom_boxplot() +
+  geom_hline(yintercept = 0.95, linetype = "dashed", linewidth = 0.5) +
+  ylim(0.9, 1) +
+  theme_bw() +
+  labs(x = "", y = "Coverage") +
+  theme(
+    text = element_text(size = 15),
+    legend.position = "none"
+  ) +
+  scale_color_manual(values = c(
+    rgb(203, 81, 25, maxColorValue = 255),
+    rgb(0, 75, 90, maxColorValue = 255)
+  ))
+
 plot_coverage
 
-# interval width
-#----------------
-data_interval_width <- data %>% 
-  group_by(method, repitition, metric, probs_quantiles, min.bucket) %>%
-  dplyr::summarise(across(interval_width, mean, na.rm = TRUE), .groups = "drop")
 
-plot_width <- ggplot(data_interval_width %>% filter(grepl("CPS", method)), aes(x=method, y= interval_width, col = method))+#, col = factor(min.bucket))) +
+#------------------------------------------------------------------------------
+# Uncertainty quality: interval width
+#------------------------------------------------------------------------------
+data_interval_width <- data %>%
+  group_by(method, repitition, metric, probs_quantiles, min.bucket) %>%
+  dplyr::summarise(dplyr::across(interval_width, mean, na.rm = TRUE), .groups = "drop")
+
+plot_width <- ggplot(
+  data_interval_width %>% filter(grepl("CPS", method)),
+  aes(x = method, y = interval_width, col = method)
+) +
   geom_boxplot() +
-  #facet_wrap(metric~., nrow=1) +
   theme_bw() +
-  labs(x = "",
-       y = "Interval width", 
-       col = "min.bucket")+
-  theme(text = element_text(size = 15), legend.position = "none",
-        legend.text = element_text(size = 14),
-        legend.title = element_text(size = 14),
-        legend.key.size = unit(0.6, 'cm'),
-        strip.text.y = element_text(size = 18),
-        strip.text.x = element_text(size = 18)) +
-  scale_color_manual(values = c(rgb(203,81,25, maxColorValue = 255),
-                                rgb(0,75,90, maxColorValue = 255))) 
+  labs(x = "", y = "Interval width") +
+  theme(
+    text = element_text(size = 15),
+    legend.position = "none"
+  ) +
+  scale_color_manual(values = c(
+    rgb(203, 81, 25, maxColorValue = 255),
+    rgb(0, 75, 90, maxColorValue = 255)
+  ))
+
 plot_width
 
 
+#------------------------------------------------------------------------------
+# Combine and save final figure
+#------------------------------------------------------------------------------
+prediction_accuracy <- plot_grid(
+  plot_rmse,
+  plot_brier_prediabetes,
+  plot_brier_diabetes,
+  plot_width,
+  plot_coverage,
+  labels = "AUTO",
+  rel_widths = c(1, 1.5, 1.5, 1, 1),
+  nrow = 1
+)
 
+prediction_accuracy
 
-
+ggsave(
+  prediction_accuracy,
+  filename = file.path(out_dir, "fig5_prediction_accuracy.png"),
+  width = 45,
+  height = 9,
+  units = "cm",
+  dpi = 200
+)

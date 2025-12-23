@@ -1,16 +1,30 @@
-With this git repo the simulations and figures "Uncertainty quantification enhances the explainability of artificial representative trees" can be reproduced. 
-Please note, that the simulations in the paper were performed using a high throughout batch system. 
+With this git repo the simulations and figures "Predicting Ordinal Outcome via Artificial Trees with Uncertainty Quantification" can be reproduced. 
+Please note, that the analysis in the paper were performed using a high throughout batch system. 
 The used system has 11 nodes with 96GB to 768 GB memory and 12 to 64 CPUs.
 This repo will implement the same calculations on your local system, which may lead to a high computation time. 
 
-To start, please first open simulations.R in RStudio. By running this script you should be able to generate a first data set. 
-The preselected settings will need around 5-10 minutes to calculate. 
-To run the benchmark evaluation, please first open benchmark_data.R in RStudio. 
-By running this script you should be able to generate a first data set. 
+To get started, first clone the repository using: git clone https://github.com/imbs-hl/ART_uncertainty_paper
 
-The scripts figure1.R, figure2.R, ... and figure7.R can be used to reproduce the figures 1 - 7 from the paper. 
-You can choose if you want to build the figures from you self calculated data or to import the precalculated simulation and benchmark data from the paper, which you can find in the proc folder. 
+After cloning the repository, open the script *01_prepare_data.R* in RStudio and run it. 
+This script preprocesses the NHANES pre-pandemic diabetes dataset, including data cleaning and feature preparation.
 
-To clone this repository, use: git clone xxx (public github repository will be provided after anonymization is not longer necessary)
+Once preprocessing is complete, run the script *02calculate_results.R*.
+This script trains all models used in the paper, including Artificial Regression Trees (ARTs), Decision Trees (DTs) with and without conformal predictive systems (CPS).
+It stores all results required for the figure scripts. 
+With the default settings provided in the script, the runtime is approximately 5 to 10 minutes on a standard local computer.
 
-For any issues or questions please contact me by xxxx (email will be provided after anonymization is not longer necessary)
+The scripts figure1.R, figure2.R, figure3.R, figure4.R, and figure5.R can be used to reproduce Figures 1 through 5 from the paper. 
+Each script corresponds to one figure and generates the respective plots.
+You can choose if you want to build the figures from you self calculated data or to import the precalculated results from the paper, 
+which you can find in the data folder. 
+
+
+Some computations, particularly the stability analyses across folds and repetitions, can be memory- and time-intensive. 
+For this reason, default settings such as the probability quantiles c(0.25, 0.5, 0.75) are preselected. 
+These settings can be modified by the user, but doing so may significantly increase computation time.
+
+For any issues, questions, or requests for access to full intermediate results such as fitted trees, training, test, or validation data, 
+please contact:
+
+Lea Kronziel
+l.kronziel@uni-luebeck.de

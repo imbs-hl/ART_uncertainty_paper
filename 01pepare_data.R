@@ -49,6 +49,7 @@ library(kidney.epi)
 #------------------------------------------------------------------------------
 project.dir = this.dir()
 input.dir = file.path(project.dir, "external_data")
+data.dir = file.path(project.dir, "data")
 
 info.var.file <- file.path(
   input.dir,

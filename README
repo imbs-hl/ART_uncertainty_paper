@@ -5,7 +5,8 @@ This repo will implement the same calculations on your local system, which may l
 
 To get started, first clone the repository using: git clone https://github.com/imbs-hl/ART_uncertainty_paper
 
-After cloning the repository, open the script *01_prepare_data.R* in RStudio and run it. 
+After cloning the repository,open the script *01_prepare_data.R* in RStudio. 
+You have to dowload the additional data about the prescription drugs as first, bevor you run this script. The details are listed in the header of *01_prepare_data.R*.
 This script preprocesses the NHANES pre-pandemic diabetes dataset, including data cleaning and feature preparation.
 
 Once preprocessing is complete, run the script *02calculate_results.R*.

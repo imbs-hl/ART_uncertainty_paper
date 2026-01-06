@@ -3,6 +3,12 @@
 #===============================================================================
 # This script prepares a pre-pandemic NHANES dataset for predictive modeling
 # of glycohemoglobin and diabetes-related outcomes.
+# Please download the additional data about the prescription drugs first.
+# We used the updated data from September 2021.
+# Download the data from: https://wwwn.cdc.gov/nchs/nhanes/Search/DataPage.aspx?Component=Questionnaire&CycleBeginYear=2019
+# Store them in the folder "external_data"
+#
+# After that compute the following steps
 #
 # Main steps:
 # 1. Load and merge NHANES tables based on a predefined list of variables.

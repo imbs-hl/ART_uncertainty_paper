@@ -1,0 +1,21 @@
+With this Git repository, the simulations and Figures 2 and 3 can be reproduced.  
+Please note that the analyses in the paper were performed using a high-throughput batch system.  
+The system used consists of 11 nodes with 96 GB to 768 GB memory and 12 to 64 CPUs.  
+
+This repository implements the same calculations on a local system, which may result in long computation times.  
+
+To simulate the results and generate the plots, please follow these steps:
+1) Open the R project "simulation.Rproj".  
+2) Run the script "01run_simulations.R" to simulate the data. Details are provided in the script header.  
+   With the default settings, the runtime is approximately 5 to 10 minutes on a standard local computer.  
+   You may choose a higher number of repetitions and simulated settings, but this will increase the runtime.  
+3) Open the script "02figure2.R" and/or "02figure3.R" to generate the plots based on the simulated data from step 2.  
+
+If you want to use the original simulated data from the paper, please download the data from xxx and store it in the "data" folder.  
+In both scripts ("02figure2.R" and "02figure3.R"), the corresponding lines for using this data are already included but commented out.  
+Please uncomment these lines and comment out the lines that use the simulated data from the steps above.  
+
+For any issues or questions, please contact:  
+
+Lea L. Kronziel  
+l.kronziel@uni-luebeck.de  

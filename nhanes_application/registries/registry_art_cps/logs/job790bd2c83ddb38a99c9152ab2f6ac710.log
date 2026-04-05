@@ -1,0 +1,16 @@
+### [bt]: This is batchtools v0.9.18
+### [bt]: Starting calculation of 1 jobs
+### [bt]: Setting working directory to '/Users/kronziel/mywork/diss/git_repros/ART_uncertainty_paper/proc'
+### [bt]: Memory measurement disabled
+### [bt]: Starting job [batchtools job.id=1]
+### [bt]: Generating problem instance for problem 'get_cv_data' ...
+### [bt]: Applying algorithm 'get_art' on problem 'get_cv_data' for job 1 (seed = 18729) ...
+G3;You provided a test data set for a distance measure by splitting variables. This is not necessary and will be ignored.
+gJoining with `by = join_by(nodeID, prediction)`
+Joining with `by = join_by(nodeID)`
+Joining with `by = join_by(nodeID)`
+Joining with `by = join_by(nodeID)`
+Joining with `by = join_by(nodeID)`
+
+### [bt]: Job terminated successfully [batchtools job.id=1]
+### [bt]: Calculation finished!

@@ -1,0 +1,10 @@
+### [bt]: This is batchtools v0.9.18
+### [bt]: Starting calculation of 1 jobs
+### [bt]: Setting working directory to '/Users/kronziel/mywork/diss/git_repros/ART_uncertainty_paper/proc'
+### [bt]: Memory measurement disabled
+### [bt]: Starting job [batchtools job.id=35]
+### [bt]: Generating problem instance for problem 'get_cv_data' ...
+### [bt]: Applying algorithm 'get_rf_variable_usage' on problem 'get_cv_data' for job 35 (seed = 18763) ...
+
+### [bt]: Job terminated successfully [batchtools job.id=35]
+### [bt]: Calculation finished!

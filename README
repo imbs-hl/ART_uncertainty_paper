@@ -1,0 +1,16 @@
+With this Git repository, the simulations, benchmark experiments, and the NHANES application (including all figures) can be fully reproduced.
+
+Please note that the analyses in the paper were performed using a high-throughput computing cluster.
+The system used consists of 11 nodes with 96 GB to 768 GB of memory and 12 to 64 CPUs per node.
+
+This repository implements the same computations on a local machine, which may result in significantly longer runtimes.
+
+Detailed instructions for the simulations, benchmark experiments, and the NHANES application are provided in the respective subfolders of this repository.
+Each folder contains a dedicated README with step-by-step guidance.
+
+If you would like to use the original data from the paper, please download it from [link] and place it in the corresponding data folder.
+
+For any issues or questions, please contact:
+
+Lea L. Kronziel
+l.kronziel@uni-luebeck.de

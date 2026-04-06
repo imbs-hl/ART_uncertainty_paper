@@ -1,0 +1,211 @@
+##' With this script the benchmark experiments from Kronziel et al. "Predicting Medical 
+##' Outcomes using Artificial Representative Trees with Uncertainty 
+##' Quantification" can be reproduced. 
+##' Please note, that the experiments in the paper were performed using 
+##' batchtools on  a high throughout batch system. This script will implement 
+##' the same calculations on your local system, which may lead to a high 
+##' computation time. Comments will show you where you can save time or 
+##' incorporate your own batch system. 
+
+#---------------------------------------
+
+## Load libraries
+if (!"pacman" %in% installed.packages()){
+  install.packages("pacman")
+}
+library(pacman)
+packages <- c("batchtools", "checkmate", "data.table", "ggplot2", 
+              "ranger", "bindata", "rpart", "plyr", "dplyr", 
+              "gridExtra", "DescTools", "caret", "this.path")
+p_load(packages, character.only = TRUE)
+
+if("timbR" %in% installed.packages()){
+  library(timbR)
+} else {
+  devtools::install_github("imbs-hl/timbR", "master")
+  library(timbR)
+}
+
+#---------------------------------------
+## Define directories
+## Please define your main directory here. 
+## This should be the directory you cloned the git repository into.
+main_dir <- this.dir()
+setwd(main_dir)
+
+## Define functions directory
+fun_dir <- file.path(main_dir, "functions")
+## Create and define registry directory
+dir.create(file.path(main_dir, "registries"), showWarnings = FALSE)
+reg_dir <- file.path(main_dir, "registries")
+## Create and define data directory
+dir.create(file.path(main_dir, "data"), showWarnings = FALSE)
+proc_dir <- file.path(main_dir, "data")
+
+# --------------------------------------------------- #
+#                  Run Experiments                    #
+# --------------------------------------------------- #
+
+#---------------------------------------
+## load function needed for the cross-validation
+source("functions/get_cv_data.R")
+
+## functions to build artificial representative trees (ART) and decision trees (DT) 
+source("functions/get_art.R")
+source("functions/get_dt.R")
+source("functions/get_seperate_dt.R")
+source("functions/get_seperate_art.R")
+#---------------------------------------
+## set parameters for experiments
+
+## parameter of cross-validation and benchmark data. You can save time here.
+## (in publication 10 was used, for time reasons 5 is used here)
+num_folds <- 5 # 
+
+# We suggest to try out the code with one data set due to increased runtime with all data sets, e.g. using wineW
+# If you want to use all data sets as in the pubilcation, please uncomment the followign line and delete the one below
+# dataset_name <- c("abalone", "airfoil", "deltaA", "deltaE", "friedm", 
+#                   "mortgage", "wineW", "wizmir", "comp",
+#                   "puma8fh", "puma8fm", "puma8nh", "puma8nm",
+#                   "kin8fh", "kin8fm", "kin8nh", "kin8nm",
+#                   "bank8fh", "bank8fm", "bank8nh", "bank8nm")
+dataset_name <- c("wineW")
+
+## parameter of ART and DT used in paper are listed as comments below, to save time a reduced selection is used here
+metric   <- c("splitting variables") ## Simularity / distance measure for selecting MRT or building ART
+probs_quantiles <- list(c(0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9)) ## Use quantiles of split points instead of all split points for continuous variables when creating the ART to save time
+min.bucket <- c(150) ## Minimal number of training observations reaching in each leaf
+epsilon <- c(0) ## Continue adding more nodes to the ART if the similarity remains the same but the prediction improves by 1 - epsilon
+
+# metric   <- c("weighted splitting variables", "splitting variables", "prediction") ## Simularity / distance measure for selecting MRT or building ART
+# probs_quantiles <- list(c(0.25,0.5,0.75), c(0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9), NULL) ## Use quantiles of split points instead of all split points for continuous variables when creating the ART to save time
+# min.bucket <- c(150, 200, 250) ## Minimal number of training observations reaching in each leaf
+# epsilon <- c(0) ## Continue adding more nodes to the ART if the similarity remains the same but the prediction improves by 1 - epsilon
+
+## parameter for conformal predictive system (CPS)
+significance_level <- 0.05 # Significance level for uncertainty quantification with prediction interval 
+
+## Number of times each experiment is repeated. You can save time here
+## (in publication 20 was used, for time reasons 3 is used here)
+repitition <- 1:3
+#---------------------------------------
+## Create registry 
+reg_name <- "benchmark_experiments"
+reg <- batchtools::makeExperimentRegistry(
+  file.dir = file.path(reg_dir, reg_name),
+  work.dir = main_dir,
+  conf.file = NA, ## If you have a batch system, please enter conf file here,
+  packages = c(packages, "timbR") ## Define which packages to use in your simulations
+)
+# ---------------------------------------
+# Data Simulation                   
+
+## Add problems ----
+batchtools::addProblem(name = "get_cv_data",
+                       reg = reg, 
+                       fun = get_cv_data,
+                       data = 1,
+                       seed = 12345)
+
+## Add algorithms to solve the problem ----
+# ART with CPS
+batchtools::addAlgorithm(reg = reg,
+                         name = "get_art",
+                         fun = get_art
+)
+# DT with CPS
+batchtools::addAlgorithm(reg = reg,
+                         name = "get_dt",
+                         fun = get_dt
+)
+# One DT for regression, one for probability
+batchtools::addAlgorithm(reg = reg,
+                         name = "get_seperate_dt",
+                         fun = get_seperate_dt
+)
+# One ART for regression, one for probability
+batchtools::addAlgorithm(reg = reg,
+                         name = "get_seperate_art",
+                         fun = get_seperate_art
+)
+
+
+## define problem and algorithm designs
+prob.designs <- list(
+  get_cv_data = expand.grid(current_fold = 1:num_folds,
+                           num_folds = num_folds,
+                           repitition = repitition,
+                           stringsAsFactors = FALSE,
+                           dataset_name = dataset_name
+  )
+)
+
+
+algo.designs <- list(
+  get_art = expand.grid(metric = metric, 
+                         stringsAsFactors = FALSE,
+                         probs_quantiles = probs_quantiles,
+                         epsilon = epsilon,
+                         min.bucket = min.bucket,
+                         significance_level = significance_level),
+  get_dt = expand.grid(stringsAsFactors = FALSE,
+                       min.bucket = min.bucket,
+                       significance_level = significance_level),
+  get_seperate_dt = expand.grid(stringsAsFactors = FALSE,
+                                min.bucket = min.bucket),
+  get_seperate_art = expand.grid(metric = metric, 
+                                stringsAsFactors = FALSE,
+                                probs_quantiles = probs_quantiles,
+                                epsilon = epsilon,
+                                min.bucket = min.bucket)
+)
+
+
+## Add experiments ----
+ids = batchtools::addExperiments(reg = reg,
+                                 prob.designs = prob.designs,
+                                 algo.designs = algo.designs,
+                                 repls = 1)
+ids[, chunk := 1]
+
+summarizeExperiments(reg = reg)
+
+## Test jobs before submission
+# testJob(id = 1, reg = reg)
+
+## Please change hyperparameters of submitJobs() here, if you have a batch system. 
+submitJobs(ids = ids, reg = reg)
+
+##' With pre selected parameters it will take around 5-10 min to complete.
+##' Please note, the run times for the other settings could differ. 
+##' Anyway simulating data for the figures in the paper will probably run for several days on you computer. 
+
+## check job status
+getStatus()
+
+## Collect and save results ----
+results <- reduceResultsList(reg = reg)
+
+
+## Save calculate performance measures and job informations as data.frame
+results_df <- lapply(results, function(x){x[[1]]}) %>% bind_rows()
+saveRDS(results_df, file = file.path("data", paste0("results_", reg_name, ".rds")))
+
+## Save regression trees as list
+regression_trees <- lapply(results, function(x){
+  x$regression_trees
+})
+saveRDS(regression_trees, file = file.path("data", paste0("regression_trees_", reg_name, ".rds")))
+
+## Save probability trees as list
+probability_trees <- lapply(results, function(x){
+  x$probability_trees
+})
+saveRDS(probability_trees, file = file.path("data", paste0("probability_trees_", reg_name, ".rds")))
+
+## Save predicted probabilies for CPS methods
+pred_prob <- lapply(results, function(x){
+  x$prob_df
+})
+saveRDS(pred_prob, file = file.path("data", paste0("pred_probabilities_", reg_name, ".rds")))
+

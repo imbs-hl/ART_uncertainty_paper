@@ -1,0 +1,23 @@
+With this Git repository, the benchmark experiments and Figures 4,5, and 6 can be reproduced.  
+Please note that the analyses in the paper were performed using a high-throughput batch system.  
+The system used consists of 11 nodes with 96 GB to 768 GB memory and 12 to 64 CPUs.  
+
+This repository implements the same calculations on a local system, which may result in long computation times.  
+
+To run the benchmark experiments and generate the plots, please follow these steps:
+1) Download all benchmark data sets you want to use from the UCI repository. Detailed information about the data sets are given in Table A.1 in the publication.
+2) Store the downloaded data in the folder external_data. Please use one folder per data set (see functions/get_cv_data.R for details regarding naming the folders), 
+e.g. store the wine data set like that "wineW/winequality-white.csv".
+3) Open the R project "benchmark.Rproj".  
+4) Run the script "01run_benchmark.R" to simulate the data. Details are provided in the script header.   
+   You may choose a higher number of repetitions and simulated settings, but this will increase the runtime.  
+5) Open the script "02figure4.R" and/or "02figure5.R" and/or "02figure6.R" to generate the plots based on the data from step 4.  
+
+If you want to use the original data from the paper, please download the data from xxx and store it in the "data" folder.  
+In the scripts ("02figure4.R", "02figure5.R", and "02figure6.R"), the corresponding lines for using this data are already included but commented out.  
+Please uncomment these lines and comment out the lines that use the simulated data from the steps above.  
+
+For any issues or questions, please contact:  
+
+Lea L. Kronziel  
+l.kronziel@uni-luebeck.de  

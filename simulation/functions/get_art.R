@@ -32,7 +32,7 @@ get_art <- function(data, instance, metric, probs_quantiles, epsilon, min.bucket
   pred_regr_rf <- predict(rf, test_data)$predictions
   mse_regr_rf <- mean((test_data$y - pred_regr_rf)^2)
   
-  # Build ART (Adaptive Regression Tree)
+  # Build ART 
   #----------------
   probs_quantiles <- unlist(probs_quantiles)
   start <- proc.time()

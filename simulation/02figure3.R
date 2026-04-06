@@ -1,8 +1,7 @@
 ##' With this script the figure 3 from Kronziel et al. "Predicting Medical 
 ##' Outcomes using Artificial Representative Trees with Uncertainty 
 ##' Quantification" can be reproduced. Given a simulated data set. 
-##' Run simulations.R to get such a data set (data/) or select the results from the 
-##' paper (data/results_from_simulations_from_paper.rds). 
+##' Run 01run_simulations.R to get such a data set. 
 ##' With the standard parameters in 01run_simulations.R, only the part for 
 ##' data scenario 1 is reproduced, as the runtime without a computing cluster 
 ##' would otherwise be too high.

@@ -80,7 +80,7 @@ data <- readRDS(file.path(proc_dir, "results_benchmark_experiments.rds")) %>%
 # 
 # data from publication
 #
-# data <- readRDS(file.path(proc_dir, "results_benchmark_experiments__benchmark_results.rds")) %>% 
+# data <- readRDS(file.path(proc_dir, "results_benchmark_experiments__benchmark_results_from_paper.rds")) %>% 
 #   # Rename methods for better readability in plots
 #   mutate(method = case_when(method == "Regression ART + CPS" ~ "ART + CPS",
 #                             method == "Regression DT + CPS" ~ "DT + CPS",

@@ -78,7 +78,7 @@ pred_prob_imp <- readRDS(file.path("data", "pred_probabilities_simulated_results
 
 
 # if you want to use the original data from the publication, please download them (see README for details), unpack them, and move them into the data folder: 
-# results <- readRDS(file.path(proc_dir, "results_simulated_results.Rds"))  %>%
+# results <- readRDS(file.path(proc_dir, "results_simulated_results_from_paper.Rds"))  %>%
 #   # Filter for specific parameter configuration used in the figure
 #   filter(min.bucket == 150) %>%
 #   filter(metric == "splitting variables" | is.na(metric)) %>%

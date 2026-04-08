@@ -98,7 +98,7 @@ pred_prob <- readRDS(file.path(proc_dir, "pred_probabilities_benchmark_experimen
 # 
 # data from publication
 #
-# data <- readRDS(file.path(proc_dir, "results_benchmark_experiments_benchmark_results.rds")) %>% 
+# data <- readRDS(file.path(proc_dir, "results_benchmark_experiments_benchmark_results_from_paper.rds")) %>% 
 #   # Rename methods for better readability in plots
 #   mutate(method = case_when(method == "Regression ART + CPS" ~ "ART + CPS",
 #                             method == "Regression DT + CPS" ~ "DT + CPS",
@@ -114,9 +114,9 @@ pred_prob <- readRDS(file.path(proc_dir, "pred_probabilities_benchmark_experimen
 #            is.na(probs_quantiles))
 # 
 # # Load stored models and prediction probabilities
-# regression_trees <- readRDS(file.path(proc_dir, "regression_trees_benchmark_experiments_benchmark_results.Rds"))
-# probability_trees <- readRDS(file.path(proc_dir, "probability_trees_benchmark_experiments_benchmark_results.Rds"))
-# pred_prob <- readRDS(file.path(proc_dir, "pred_probabilities_benchmark_experiments_benchmark_results.Rds"))
+# regression_trees <- readRDS(file.path(proc_dir, "regression_trees_benchmark_experiments_benchmark_results_from_paper.Rds"))
+# probability_trees <- readRDS(file.path(proc_dir, "probability_trees_benchmark_experiments_benchmark_results_from_paper.Rds"))
+# pred_prob <- readRDS(file.path(proc_dir, "pred_probabilities_benchmark_experiments_benchmark_results_from_paper.Rds"))
 
 
 #---------------------------------------

@@ -36,7 +36,7 @@ library(pacman)
 # List of required packages
 packages <- c("batchtools", "checkmate", "data.table", "ggplot2", 
               "ranger", "bindata", "rpart", "plyr", "dplyr", 
-              "gridExtra", "DescTools", "caret", "cowplot")
+              "gridExtra", "DescTools", "caret", "cowplot", "this.path")
 
 # Load all packages
 p_load(packages, character.only = TRUE)
@@ -268,10 +268,22 @@ for(method in unique(data$method)){
       
       used_variables <- bind_cols(used_variables)
       
-      dist_sv <- colMeans(as.matrix(dist(t(as.matrix(used_variables)), 
-                                         method = "euclidian"))^2 / num_features)
+      dist_sv <- colMeans(as.matrix(dist(t(as.matrix(used_variables)), method = "euclidian"))^2/num_features)
       
-      dist_sv0.5 <- dist_sv
+      if(grepl("CPS", method)){
+        dist_sv0.5 <- dist_sv
+      } else {
+        used_variables0.5 <- lapply(probability_trees_setting_i, function(x){
+          splitting_variables <- treeInfo(x)$splitvarID
+          fu <- rep(0, num_features)
+          fu[(splitting_variables + 1)] <- 1
+          fu
+        })
+        used_variables0.5 <- bind_cols(used_variables0.5)
+        
+        dist_sv0.5 <- colMeans(as.matrix(dist(t(as.matrix(used_variables0.5)), method = "euclidian"))^2/num_features)
+      }
+      
       
       #---------------------------------------
       # Store results

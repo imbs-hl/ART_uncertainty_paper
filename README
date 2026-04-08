@@ -8,7 +8,7 @@ This repository implements the same computations on a local machine, which may r
 Detailed instructions for the simulations, benchmark experiments, and the NHANES application are provided in the respective subfolders of this repository.
 Each folder contains a dedicated README with step-by-step guidance.
 
-If you would like to use the original data from the paper, please download it from [link] and place it in the corresponding data folder.
+If you would like to use the original data from the paper, please download it from https://doi.org/10.5281/zenodo.8308234 and place it in the corresponding data folder.
 
 Clone this repository using: git clone https://github.com/imbs-hl/ART_uncertainty_paper
 

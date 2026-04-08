@@ -77,7 +77,7 @@ probability_trees_imp <- readRDS(file.path("data","probability_trees_simulated_r
 pred_prob_imp <- readRDS(file.path("data", "pred_probabilities_simulated_results.Rds"))
 
 
-# if you want to use the original data from the publication, please download them here and move them into the data folder: xxx
+# if you want to use the original data from the publication, please download them (see README for details), unoack them, and move them into the data folder: 
 # results <- readRDS(file.path(proc_dir, "results_simulated_results.Rds"))  %>%
 #   # Filter for specific parameter configuration used in the figure
 #   filter(min.bucket == 150) %>%

@@ -59,7 +59,7 @@ results <- readRDS(file.path(proc_dir, "results_simulated_results.Rds"))  %>%
                               method == "Regression DT + Probability DTs" ~ "Mult. DTs",
                               TRUE ~ method))
 
-# if you want to use the original data from the publication, please download them here and move them into the data folder: xxx
+# if you want to use the original data from the publication, please download them (see README for details), unoack them, and move them into the data folder: 
 # 
 # # data from publication
 # results <- readRDS(file.path(proc_dir, "results_simulated_results_from_paper.Rds"))  %>% 

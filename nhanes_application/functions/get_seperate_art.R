@@ -26,7 +26,7 @@ get_seperate_art <- function(data, instance, metric, probs_quantiles, epsilon, m
   start <- proc.time()  # start runtime measurement
   
   # Train regression ART
-  art_regr <- generate_tree(
+  regression_tree <- generate_tree(
     rf = rf,
     metric = metric,
     train_data = train_data,
@@ -37,20 +37,20 @@ get_seperate_art <- function(data, instance, metric, probs_quantiles, epsilon, m
   )
   
   # Predictions from regression ART
-  pred_regr_art <- predict(art_regr, test_data)$predictions
+  pred_regr_art <- predict(regression_tree, test_data)$predictions
   
   # Prepare calibration and test values
   #----------------
   y_cal <- cal_data$glycohemoglobin
   y_test <- test_data$glycohemoglobin
-  y_cal_pred <- predict(art_regr, cal_data)$predictions
-  y_test_pred <- predict(art_regr, test_data)$predictions
+  y_cal_pred <- predict(regression_tree, cal_data)$predictions
+  y_test_pred <- predict(regression_tree, test_data)$predictions
   
   # Train probability ART for prediabetes (>= 5.7)
   train_data_5.7 <- train_data %>%
     mutate(glycohemoglobin = ifelse(glycohemoglobin >= 5.7, 1, 0))
   
-  art_prob5.7 <- generate_tree(
+  probability_tree5.7 <- generate_tree(
     rf = rf_prob5.7,
     metric = metric,
     train_data = train_data_5.7,
@@ -64,7 +64,7 @@ get_seperate_art <- function(data, instance, metric, probs_quantiles, epsilon, m
   train_data_6.5 <- train_data %>%
     mutate(glycohemoglobin = ifelse(glycohemoglobin >= 6.5, 1, 0))
   
-  art_prob6.5 <- generate_tree(
+  probability_tree6.5 <- generate_tree(
     rf = rf_prob6.5,
     metric = metric,
     train_data = train_data_6.5,
@@ -84,23 +84,23 @@ get_seperate_art <- function(data, instance, metric, probs_quantiles, epsilon, m
   
   # Average number of splits across trees
   num_splits_regr_art <- mean(c(
-    nrow(treeInfo(art_regr) %>% filter(!terminal)),
-    nrow(treeInfo(art_prob5.7) %>% filter(!terminal)),
-    nrow(treeInfo(art_prob6.5) %>% filter(!terminal))
+    nrow(treeInfo(regression_tree) %>% filter(!terminal)),
+    nrow(treeInfo(probability_tree5.7) %>% filter(!terminal)),
+    nrow(treeInfo(probability_tree6.5) %>% filter(!terminal))
   ))
   
   # Brier scores per test observation
   #----------------
   # Assign observations to terminal nodes
-  test_data_leafs  <- predict(art_regr, test_data, type = "terminalNodes")$predictions
-  train_data_leafs <- predict(art_regr, train_data, type = "terminalNodes")$predictions
-  cal_data_leafs   <- predict(art_regr, cal_data, type = "terminalNodes")$predictions
+  test_data_leafs  <- predict(regression_tree, test_data, type = "terminalNodes")$predictions
+  train_data_leafs <- predict(regression_tree, train_data, type = "terminalNodes")$predictions
+  cal_data_leafs   <- predict(regression_tree, cal_data, type = "terminalNodes")$predictions
   
   brier_score_df <- data.frame(
     y = y_test,
     nodeID = test_data_leafs,
-    prob5.7 = predict(art_prob5.7, test_data)$predictions[, 2],
-    prob6.5 = predict(art_prob6.5, test_data)$predictions[, 2]
+    prob5.7 = predict(probability_tree5.7, test_data)$predictions[, 2],
+    prob6.5 = predict(probability_tree6.5, test_data)$predictions[, 2]
   ) %>%
     mutate(
       over5.7 = ifelse(y >= 5.7, 1, 0),
@@ -140,28 +140,28 @@ get_seperate_art <- function(data, instance, metric, probs_quantiles, epsilon, m
   }
   
   max_depth <- mean(
-    max(get_max_depth(art_regr)),
-    max(get_max_depth(art_prob5.7)),
-    max(get_max_depth(art_prob6.5))
+    max(get_max_depth(regression_tree)),
+    max(get_max_depth(probability_tree5.7)),
+    max(get_max_depth(probability_tree6.5))
   )
   
   # Number of terminal nodes
-  num_leaves_regr <- nrow(treeInfo(art_regr) %>% filter(terminal))
-  num_leaves_prediabetes <- nrow(treeInfo(art_prob5.7) %>% filter(terminal))
-  num_leaves_diabetes <- nrow(treeInfo(art_prob6.5) %>% filter(terminal))
+  num_leaves_regr <- nrow(treeInfo(regression_tree) %>% filter(terminal))
+  num_leaves_prediabetes <- nrow(treeInfo(probability_tree5.7) %>% filter(terminal))
+  num_leaves_diabetes <- nrow(treeInfo(probability_tree6.5) %>% filter(terminal))
   num_leaves <- mean(num_leaves_regr, num_leaves_prediabetes, num_leaves_diabetes)
   
   # Sparsity: number of splitting variables
-  num_vars_split_regr <- length(na.omit(unique(treeInfo(art_regr)$splitvarID)))
-  num_vars_split_prediabetes <- length(na.omit(unique(treeInfo(art_prob5.7)$splitvarID)))
-  num_vars_split_diabetes <- length(na.omit(unique(treeInfo(art_prob6.5)$splitvarID)))
+  num_vars_split_regr <- length(na.omit(unique(treeInfo(regression_tree)$splitvarID)))
+  num_vars_split_prediabetes <- length(na.omit(unique(treeInfo(probability_tree5.7)$splitvarID)))
+  num_vars_split_diabetes <- length(na.omit(unique(treeInfo(probability_tree6.5)$splitvarID)))
   num_vars_split <- mean(num_vars_split_regr, num_vars_split_prediabetes, num_vars_split_diabetes)
   
   # Return results
   #----------------
   return(list(
     info_df = data.frame(
-      method = "Regression ART + Probability ARTs",
+      method = "Mult. ARTs",
       metric = metric,
       mse_test_dat_tree = mse_regr_art,
       mse_test_dat_rf = mse_regr_rf,
@@ -183,10 +183,8 @@ get_seperate_art <- function(data, instance, metric, probs_quantiles, epsilon, m
       num_leaves = num_leaves,
       num_vars_split = num_vars_split
     ) %>% cbind(information_df),
-    tree = art_regr,
-    art_prob5.7 = art_prob5.7,
-    art_prob6.5 = art_prob6.5,
-    test_data = test_data,
-    cal_data = cal_data
+    regression_trees = regression_tree,
+    probability_trees5.7 = probability_tree5.7,
+    probability_trees6.5 = probability_tree6.5
   ))
 }

@@ -84,7 +84,7 @@ source("functions/get_rf_variable_usage.R")
 
 # Number of folds of cv and number of repeated cvs
 num_folds <- 4 # 10
-repitition <- c(1:2)# c(1:20)
+repitition <- c(1:2)# value from paper: c(1:20)
 
 # DT and ART hyperparameters
 # ART: Distance metric (ART vs. RF)
@@ -104,7 +104,7 @@ significance_level <- 0.05
 
 #---------------------------------------
 # Create registry
-reg_name <- "registry_art_cps" 
+reg_name <- "nhanes_application" 
 
 reg <- makeExperimentRegistry(
   file.dir = file.path(reg_dir, reg_name),
@@ -195,7 +195,29 @@ getStatus()
 
 # Collect and save results ----
 results <- reduceResultsList(reg = reg, missing.val = 0)
-# Results dataframe
+## Save calculate performance measures and job informations as data.frame
 results_df <- lapply(results, function(x){x[[1]]}) %>% bind_rows()
-saveRDS(results_df, file = file.path("data", paste0(reg_name, "_df.rds")))
-saveRDS(results, file = file.path("data", paste0("list_", reg_name, ".rds")))
+saveRDS(results_df, file = file.path("data", paste0("results_", reg_name, ".rds")))
+
+## Save regression trees as list
+regression_trees <- lapply(results, function(x){
+  x$regression_trees
+})
+saveRDS(regression_trees, file = file.path("data", paste0("regression_trees_", reg_name, ".rds")))
+
+## Save probability trees as list (prediabetes 5.7 and diabetes 6.5 thresholds)
+probability_trees5.7 <- lapply(results, function(x){
+  x$probability_trees5.7
+})
+saveRDS(probability_trees5.7, file = file.path("data", paste0("probability_trees5.7_", reg_name, ".rds")))
+
+probability_trees6.5 <- lapply(results, function(x){
+  x$probability_trees5.7
+})
+saveRDS(probability_trees6.5, file = file.path("data", paste0("probability_trees6.5_", reg_name, ".rds")))
+
+## Save predicted probabilies for CPS methods
+pred_prob <- lapply(results, function(x){
+  x$prob_df
+})
+saveRDS(pred_prob, file = file.path("data", paste0("pred_probabilities_", reg_name, ".rds")))

@@ -24,7 +24,7 @@ get_art <- function(data, instance, metric, probs_quantiles, epsilon, min.bucket
   start <- proc.time()  # start runtime measurement
   
   # Train regression ART
-  art_regr <- generate_tree(
+  regression_tree <- generate_tree(
     rf = rf,
     metric = metric,
     train_data = train_data,
@@ -35,15 +35,15 @@ get_art <- function(data, instance, metric, probs_quantiles, epsilon, min.bucket
   )
   
   # Predictions from regression ART
-  pred_regr_art <- predict(art_regr, test_data)$predictions
+  pred_regr_art <- predict(regression_tree, test_data)$predictions
   
   # Build CPS
   #----------------
   # Prepare calibration and test values
   y_cal <- cal_data$glycohemoglobin
   y_test <- test_data$glycohemoglobin
-  y_cal_pred <- predict(art_regr, cal_data)$predictions
-  y_test_pred <- predict(art_regr, test_data)$predictions
+  y_cal_pred <- predict(regression_tree, cal_data)$predictions
+  y_test_pred <- predict(regression_tree, test_data)$predictions
   
   # Compute calibrated predictive distribution (Mondrian CPS)
   cpd_art <- get_calibrated_predictive_system_mondrian(
@@ -52,7 +52,7 @@ get_art <- function(data, instance, metric, probs_quantiles, epsilon, min.bucket
     y_test_pred = y_test_pred,
     significance_level = significance_level,
     interval_type = "two-tailed",
-    tree = art_regr,
+    tree = regression_tree,
     cal_data = cal_data,
     test_data = test_data,
     show_node_id = TRUE,
@@ -61,7 +61,7 @@ get_art <- function(data, instance, metric, probs_quantiles, epsilon, min.bucket
     mutate(nodeID = leaf - 1)
   
   # Merge tree structure with CPS results
-  tree_info_df <- treeInfo(art_regr) %>%
+  tree_info_df <- treeInfo(regression_tree) %>%
     left_join(unique(cpd_art)) %>%
     mutate(
       lower_bound = round(lower_bound, 2),
@@ -75,9 +75,9 @@ get_art <- function(data, instance, metric, probs_quantiles, epsilon, min.bucket
   leafs <- tree_info_df %>% filter(terminal) %>% select(nodeID) %>% unlist() %>% unname()
   
   # Assign observations to leaves
-  test_data_leafs  <- predict(art_regr, test_data,  type = "terminalNodes")$predictions
-  train_data_leafs <- predict(art_regr, train_data, type = "terminalNodes")$predictions
-  cal_data_leafs   <- predict(art_regr, cal_data,   type = "terminalNodes")$predictions
+  test_data_leafs  <- predict(regression_tree, test_data,  type = "terminalNodes")$predictions
+  train_data_leafs <- predict(regression_tree, train_data, type = "terminalNodes")$predictions
+  cal_data_leafs   <- predict(regression_tree, cal_data,   type = "terminalNodes")$predictions
   
   probs_df <- list()
   
@@ -92,8 +92,8 @@ get_art <- function(data, instance, metric, probs_quantiles, epsilon, min.bucket
     # Predictive distribution for leaf
     cpd_dist <- get_predictive_distribution(
       y_cal = cal_dat_leaf$glycohemoglobin,
-      y_cal_pred = predict(art_regr, cal_dat_leaf)$predictions,
-      y_test_pred = predict(art_regr, test_dat_leaf)$predictions
+      y_cal_pred = predict(regression_tree, cal_dat_leaf)$predictions,
+      y_test_pred = predict(regression_tree, test_dat_leaf)$predictions
     )[[1]]
     
     # Construct cumulative probabilities
@@ -125,7 +125,7 @@ get_art <- function(data, instance, metric, probs_quantiles, epsilon, min.bucket
   
   # Empirical frequencies of test data exceeding thresholds per leaf
   prob_df_i <- data.frame(
-    nodeID = predict(art_regr, test_data, type = "terminalNodes")$prediction,
+    nodeID = predict(regression_tree, test_data, type = "terminalNodes")$prediction,
     glycohemoglobin = test_data$glycohemoglobin
   ) %>%
     group_by(nodeID) %>%
@@ -147,7 +147,7 @@ get_art <- function(data, instance, metric, probs_quantiles, epsilon, min.bucket
   mse_regr_art <- mean((test_data$glycohemoglobin - pred_regr_art)^2)
   
   # Number of splits (tree complexity)
-  num_splits_regr_art <- nrow(treeInfo(art_regr) %>% filter(!terminal))
+  num_splits_regr_art <- nrow(treeInfo(regression_tree) %>% filter(!terminal))
   
   # Brier scores
   brier_score_df <- data.frame(
@@ -181,7 +181,7 @@ get_art <- function(data, instance, metric, probs_quantiles, epsilon, min.bucket
   interval_width <- mean(interval_width_df$upper_bound - interval_width_df$lower_bound)
   
   # Tree depth calculation (BFS-style)
-  ti <- treeInfo(art_regr)
+  ti <- treeInfo(regression_tree)
   depths <- setNames(integer(nrow(ti)), ti$nodeID)
   depths["0"] <- 0  # root node
   
@@ -197,16 +197,16 @@ get_art <- function(data, instance, metric, probs_quantiles, epsilon, min.bucket
   max_depth <- max(depths)
   
   # Number of terminal nodes
-  num_leaves <- nrow(treeInfo(art_regr) %>% filter(terminal))
+  num_leaves <- nrow(treeInfo(regression_tree) %>% filter(terminal))
   
   # Sparsity: number of variables used for splitting
-  num_vars_split <- length(na.omit(unique(treeInfo(art_regr)$splitvarID)))
+  num_vars_split <- length(na.omit(unique(treeInfo(regression_tree)$splitvarID)))
   
   # Return results
   #----------------
   return(list(
     info_df = data.frame(
-      method = "Regression ART + CPS",
+      method = "ART + CPS",
       metric = metric,
       mse_test_dat_tree = mse_regr_art,
       mse_test_dat_rf = mse_regr_rf,
@@ -228,9 +228,7 @@ get_art <- function(data, instance, metric, probs_quantiles, epsilon, min.bucket
       num_leaves = num_leaves,
       num_vars_split = num_vars_split
     ) %>% cbind(information_df),
-    tree = art_regr,
-    test_data = test_data,
-    cal_data = cal_data,
+    regression_trees = regression_tree,
     prob_df = prob_df_i %>% select(nodeID, prob5.7, prob6.5)
   ))
 }

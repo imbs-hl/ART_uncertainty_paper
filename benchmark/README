@@ -13,7 +13,7 @@ e.g. store the wine data set like that "wineW/winequality-white.csv".
    You may choose a higher number of repetitions and simulated settings, but this will increase the runtime.  
 5) Open the script "02figure4.R" and/or "02figure5.R" and/or "02figure6.R" to generate the plots based on the data from step 4.  
 
-If you want to use the original data from the paper, please download the data from xxx and store it in the "data" folder.  
+If you want to use the original simulated data from the paper, please download the data from Zenodo (https://doi.org/10.5281/zenodo.19467860), unpack it, and store it in the "data" folder.  
 In the scripts ("02figure4.R", "02figure5.R", and "02figure6.R"), the corresponding lines for using this data are already included but commented out.  
 Please uncomment these lines and comment out the lines that use the simulated data from the steps above.  
 

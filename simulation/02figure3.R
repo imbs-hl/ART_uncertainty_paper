@@ -17,7 +17,7 @@ library(pacman)
 # List of required packages for simulation, modeling, and plotting
 packages <- c("batchtools", "checkmate", "data.table", "ggplot2", 
               "ranger", "bindata", "rpart", "plyr", "dplyr", 
-              "gridExtra", "DescTools", "caret", "stringr")
+              "gridExtra", "DescTools", "caret", "stringr", "devtools", "this.path")
 
 # Load (and install if necessary) all required packages
 p_load(packages, character.only = TRUE)

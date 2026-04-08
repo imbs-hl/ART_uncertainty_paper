@@ -15,7 +15,7 @@ if (!"pacman" %in% installed.packages()){
 library(pacman)
 packages <- c("batchtools", "checkmate", "data.table", "ggplot2", 
               "ranger", "bindata", "rpart", "plyr", "dplyr", 
-              "gridExtra", "DescTools", "caret")
+              "gridExtra", "DescTools", "caret", "devtools", "this.path")
 p_load(packages, character.only = TRUE)
 
 if("timbR" %in% installed.packages()){

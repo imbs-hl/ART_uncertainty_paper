@@ -10,6 +10,9 @@ Each folder contains a dedicated README with step-by-step guidance.
 
 If you would like to use the original data from the paper, please download it from [link] and place it in the corresponding data folder.
 
+Clone this repository using: git clone https://github.com/imbs-hl/ART_uncertainty_paper
+
+
 For any issues or questions, please contact:
 
 Lea L. Kronziel

@@ -41,7 +41,7 @@ img_dir <- file.path(main_dir, "img")
 ## Load and prepare data
 #
 
-results <- readRDS(file.path(proc_dir, "results_simulated_results.Rds"))  %>%
+results <- readRDS(file.path(proc_dir, "results_simulated_results.rds"))  %>%
   filter(min.bucket == 250) %>%
   filter(metric == "splitting variables" | is.na(metric)) %>%
   filter(probs_quantiles == "" | is.na(probs_quantiles)) %>%

@@ -275,22 +275,22 @@ results <- reduceResultsList(reg = reg)
 
 ## Save calculate performance measures and job informations as data.frame
 results_df <- lapply(results, function(x){x[[1]]}) %>% bind_rows()
-saveRDS(results_df, file = file.path("data", paste0("results_", reg_name, ".rds")))
+saveRDS(results_df, file = file.path(proc_dir, paste0("results_", reg_name, ".rds")))
 
 ## Save regression trees as list
 regression_trees <- lapply(results, function(x){
   x$regression_trees
 })
-saveRDS(regression_trees, file = file.path("data", paste0("regression_trees_", reg_name, ".rds")))
+saveRDS(regression_trees, file = file.path(proc_dir, paste0("regression_trees_", reg_name, ".rds")))
 
 ## Save probability trees as list
 probability_trees <- lapply(results, function(x){
   x$probability_trees
 })
-saveRDS(probability_trees, file = file.path("data", paste0("probability_trees_", reg_name, ".rds")))
+saveRDS(probability_trees, file = file.path(proc_dir, paste0("probability_trees_", reg_name, ".rds")))
 
 ## Save predicted probabilies for CPS methods
 pred_prob <- lapply(results, function(x){
   x$prob_df
 })
-saveRDS(pred_prob, file = file.path("data", paste0("pred_probabilities_", reg_name, ".rds")))
+saveRDS(pred_prob, file = file.path(proc_dir, paste0("pred_probabilities_", reg_name, ".rds")))

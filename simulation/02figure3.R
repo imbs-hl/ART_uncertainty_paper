@@ -48,7 +48,7 @@ img_dir <- file.path(main_dir, "img")
 #---------------------------------------
 
 # Load simulation results
-results <- readRDS(file.path(proc_dir, "results_simulated_results.Rds"))  %>%
+results <- readRDS(file.path(proc_dir, "results_simulated_results.rds"))  %>%
   # Filter for specific parameter configuration used in the figure
   filter(min.bucket == 150) %>%
   filter(metric == "splitting variables" | is.na(metric)) %>%

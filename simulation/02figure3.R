@@ -1,7 +1,6 @@
-##' With this script the figure 3 from Kronziel et al. "Predicting Medical 
-##' Outcomes using Artificial Representative Trees with Uncertainty 
-##' Quantification" can be reproduced. Given a simulated data set. 
-##' Run 01run_simulations.R to get such a data set. 
+##' With this script the figure 3 from Kronziel et al. "Prediction Beyond Point 
+##' Estimates: Artificial Trees with Uncertainty" can be reproduced. 
+##' Given a simulated data set. Run 01run_simulations.R to get such a data set. 
 ##' With the standard parameters in 01run_simulations.R, only the part for 
 ##' data scenario 1 is reproduced, as the runtime without a computing cluster 
 ##' would otherwise be too high.
@@ -46,14 +45,15 @@ img_dir <- file.path(main_dir, "img")
 
 
 #---------------------------------------
+## Load and prepare data
+# ATTENTION!!!!
+warning("Please choose here which data you want to use. The default is the results you got from running 01run_simulations.R")
+# if you want to use your simulated results you got from running 01run_simulations.R, use the code at (1) for data preparation
+# if you want to use the original data from the publication, please download them (see README for details), unpack them, and move them into the data folder. Use the code at (2) for data preparation
 
+# (1) Results from 01run_simulations.R
 # Load simulation results
 results <- readRDS(file.path(proc_dir, "results_simulated_results.rds"))  %>%
-  # Filter for specific parameter configuration used in the figure
-  filter(min.bucket == 150) %>%
-  filter(metric == "splitting variables" | is.na(metric)) %>%
-  filter(probs_quantiles == "" | is.na(probs_quantiles)) %>%
-  
   # Create readable scenario labels
   mutate(scenario2 = case_when(setting == "Setting 1" ~ "large effects",
                                setting == "Setting 2" ~ "small effects",
@@ -63,7 +63,7 @@ results <- readRDS(file.path(proc_dir, "results_simulated_results.rds"))  %>%
          scenario2 = factor(scenario2,
                             levels = c("large effects", "small effects", "correlations", "interactions", "continuous variables"),
                             labels = c("1: large effects", "2: small effects", "3: correlations", "4: interactions", "5: continuous \nvariables"))) %>%
-  
+
   # Harmonize method naming for plotting
   mutate(method = case_when(method == "Regression ART + CPS" ~ "ART + CPS",
                             method == "Regression DT + CPS" ~ "DT + CPS",
@@ -77,13 +77,9 @@ probability_trees_imp <- readRDS(file.path("data","probability_trees_simulated_r
 pred_prob_imp <- readRDS(file.path("data", "pred_probabilities_simulated_results.Rds"))
 
 
-# if you want to use the original data from the publication, please download them (see README for details), unpack them, and move them into the data folder: 
-# results <- readRDS(file.path(proc_dir, "results_simulated_results_from_paper.Rds"))  %>%
-#   # Filter for specific parameter configuration used in the figure
-#   filter(min.bucket == 150) %>%
-#   filter(metric == "splitting variables" | is.na(metric)) %>%
-#   filter(probs_quantiles == "" | is.na(probs_quantiles)) %>%
-#   
+# 
+# # (2) Results from publication
+# results <- readRDS(file.path(proc_dir, "results_simulated_results_from_paper.Rds")) %>% 
 #   # Create readable scenario labels
 #   mutate(scenario2 = case_when(setting == "Setting 1" ~ "large effects",
 #                                setting == "Setting 2" ~ "small effects",
@@ -93,7 +89,7 @@ pred_prob_imp <- readRDS(file.path("data", "pred_probabilities_simulated_results
 #          scenario2 = factor(scenario2,
 #                             levels = c("large effects", "small effects", "correlations", "interactions", "continuous variables"),
 #                             labels = c("1: large effects", "2: small effects", "3: correlations", "4: interactions", "5: continuous \nvariables"))) %>%
-#   
+# 
 #   # Harmonize method naming for plotting
 #   mutate(method = case_when(method == "Regression ART + CPS" ~ "ART + CPS",
 #                             method == "Regression DT + CPS" ~ "DT + CPS",
@@ -123,22 +119,75 @@ source(file.path("functions/simulate_rf_setting_5.R"))
 set.seed(123)
 
 # Generate independent test datasets for each setting
-test_data_setting1 <- simulate_rf_setting_1(...)[[2]]
-test_data_setting2 <- simulate_rf_setting_2(...)[[2]]
-test_data_setting3 <- simulate_rf_setting_3(...)[[2]]
-test_data_setting4 <- simulate_rf_setting_4(...)[[2]]
-test_data_setting5 <- simulate_rf_setting_5(...)[[2]]
+test_data_setting1 <- simulate_rf_setting_1(data = 1000,
+                                            p_eff       = 5,
+                                            beta_eff    = 2,
+                                            n_test      = 1000,
+                                            n_val       = 1000, 
+                                            p           = 100, 
+                                            num.trees   = 500,
+                                            eps         = 1,
+                                            mtry        = 10,
+                                            min_node_size = 100)[[2]]
+test_data_setting2 <- simulate_rf_setting_2(data = 1000,
+                                            p_eff       = 50,
+                                            beta_eff    = 0.2,
+                                            n_test      = 1000,
+                                            n_val       = 1000, 
+                                            p           = 100, 
+                                            num.trees   = 500,
+                                            eps         = 1,
+                                            mtry        = 10,
+                                            min_node_size = 100)[[2]]
+test_data_setting3 <- simulate_rf_setting_3(data = 1000,
+                                            p_eff       = 5,
+                                            beta_eff    = 2,
+                                            n_test      = 1000,
+                                            n_val       = 1000,
+                                            p           = 100,
+                                            p_corr      = 5,
+                                            n_blocks    = 5,
+                                            cor         = 0.3,
+                                            num.trees   = 500,
+                                            eps         = 1,
+                                            mtry        = 10,
+                                            min_node_size = 100)[[2]]
 
-# Extract number of settings and repetitions
+test_data_setting4 <- simulate_rf_setting_4(data = 1000,
+                                            p_eff       = 5,
+                                            beta_eff    = 2,
+                                            n_test      = 1000,
+                                            n_val       = 1000,
+                                            p           = 100,
+                                            p_int       = 5,
+                                            beta_int    = 2,
+                                            num.trees   = 500,
+                                            eps         = 1,
+                                            mtry        = 10,
+                                            min_node_size = 100)[[2]]
+
+test_data_setting5 <- simulate_rf_setting_5(data = 1000,
+                                            p_eff_bin   = 5,
+                                            p_eff_con   = 5,
+                                            beta_eff    = 2,
+                                            n_test      = 1000,
+                                            n_val       = 1000,
+                                            p           = 100,
+                                            num.trees   = 500,
+                                            eps         = 1,
+                                            mtry        = 10,
+                                            min_node_size = 100)[[2]]
+
+
+# Extract number of settings 
 num_settings <- str_extract_all(unique(results$setting), "\\d") %>% as.numeric()
-num_rep <- nrow(results)/4
 
 # Sanity checks to ensure correct parameter subset is used
 if(all(!grepl("150", results$min.bucket))){
-  stop("You need results with min.bucket = 150 for this figure.")
+  stop("You need results with min.bucket = 150 for the original figure from the publication.")
 }
 if(all(!grepl("splitting variables", results$metric))){
-  stop("You need results with metric = 'splitting variables' for this figure.")
+  stop("You need results with metric = 'splitting variables' for the original figure from the publication.")
 }
 
 
@@ -176,6 +225,8 @@ for(method in unique(results$method)){
     ids_setting_i <- which((stab_data_setting$metric==metric | is.na(stab_data_setting$metric))  & 
                              (stab_data_setting$min.bucket==min.bucket | is.na(stab_data_setting$min.bucket)) & 
                              (stab_data_setting$probs_quantiles==quantiles | is.na(stab_data_setting$probs_quantiles)))
+    
+    num_rep <- length(ids_setting_i)
     
     regression_trees_i <- regression_trees[ids_setting_i]
     probability_trees_setting_i <- probability_trees[ids_setting_i]

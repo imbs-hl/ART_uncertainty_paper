@@ -1,7 +1,6 @@
-##' With this script the figure 2 from Kronziel et al. "Predicting Medical 
-##' Outcomes using Artificial Representative Trees with Uncertainty 
-##' Quantification" can be reproduced. Given a simulated data set. 
-##' Run 01run_simulations.R to get such a data set. 
+##' With this script the figure 2 from Kronziel et al. "Prediction Beyond Point 
+##' Estimates: Artificial Trees with Uncertainty" can be reproduced. 
+##' Given a simulated data set. Run 01run_simulations.R to get such a data set. 
 ##' With the standard parameters in 01run_simulations.R, only the part for 
 ##' data scenario 1 is reproduced, as the runtime without a computing cluster 
 ##' would otherwise be too high.
@@ -39,10 +38,14 @@ img_dir <- file.path(main_dir, "img")
 
 #---------------------------------------
 ## Load and prepare data
-#
+# ATTENTION!!!!
+warning("Please choose here which data you want to use. The default is the results you got from running 01run_simulations.R")
+# if you want to use your simulated results you got from running 01run_simulations.R, use the code at (1) for data preparation
+# if you want to use the original data from the publication, please download them (see README for details), unpack them, and move them into the data folder. Use the code at (2) for data preparation
 
+# (1) Results from 01run_simulations.R
 results <- readRDS(file.path(proc_dir, "results_simulated_results.rds"))  %>%
-  filter(min.bucket == 250) %>%
+  filter(min.bucket == 150) %>%
   filter(metric == "splitting variables" | is.na(metric)) %>%
   filter(probs_quantiles == "" | is.na(probs_quantiles)) %>%
   mutate(scenario2 = case_when(setting == "Setting 1" ~ "large effects",
@@ -59,21 +62,20 @@ results <- readRDS(file.path(proc_dir, "results_simulated_results.rds"))  %>%
                               method == "Regression DT + Probability DTs" ~ "Mult. DTs",
                               TRUE ~ method))
 
-# if you want to use the original data from the publication, please download them (see README for details), unpack them, and move them into the data folder: 
-# 
-# # data from publication
-# results <- readRDS(file.path(proc_dir, "results_simulated_results_from_paper.Rds"))  %>% 
-#   filter(min.bucket == 150) %>% 
-#   filter(metric == "splitting variables" | is.na(metric)) %>% 
-#   filter(probs_quantiles == "" | is.na(probs_quantiles)) %>% 
+
+# (2) Results from publication
+# results <- readRDS(file.path(proc_dir, "results_simulated_results_from_paper.rds"))  %>%
+#   filter(min.bucket == 150) %>%
+#   filter(metric == "splitting variables" | is.na(metric)) %>%
+#   filter(probs_quantiles == "" | is.na(probs_quantiles)) %>%
 #   mutate(scenario2 = case_when(setting == "Setting 1" ~ "large effects",
 #                                setting == "Setting 2" ~ "small effects",
 #                                setting == "Setting 3" ~ "correlations",
 #                                setting == "Setting 4" ~ "interactions",
 #                                setting == "Setting 5" ~ "continuous variables"),
-#          scenario2 = factor(scenario2, 
-#                             levels = c("large effects", "small effects", "correlations", "interactions", "continuous variables"), 
-#                             labels = c("1: large effects", "2: small effects", "3: correlations", "4: interactions", "5: continuous \nvariables"))) %>% 
+#          scenario2 = factor(scenario2,
+#                             levels = c("large effects", "small effects", "correlations", "interactions", "continuous variables"),
+#                             labels = c("1: large effects", "2: small effects", "3: correlations", "4: interactions", "5: continuous \nvariables"))) %>%
 #   mutate(method = case_when(method == "Regression ART + CPS" ~ "ART + CPS",
 #                             method == "Regression DT + CPS" ~ "DT + CPS",
 #                             method == "Regression ART + Probability ARTs" ~ "Mult. ARTs",

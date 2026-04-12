@@ -1,6 +1,5 @@
-##' With this script the simulations from Kronziel et al. "Predicting Medical 
-##' Outcomes using Artificial Representative Trees with Uncertainty 
-##' Quantification" can be reproduced. 
+##' With this script the simulations from Kronziel et al. "Prediction Beyond 
+##' Point Estimates: Artificial Trees with Uncertainty" can be reproduced. 
 ##' Please note, that the simulations in the paper were performed using 
 ##' batchtools on  a high throughout batch system. This script will implement 
 ##' the same calculations on your local system, which may lead to a high 

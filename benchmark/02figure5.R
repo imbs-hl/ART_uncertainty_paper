@@ -1,8 +1,5 @@
-##' Benchmark evaluation and visualization from:
-##' Kronziel et al. (2024): "Predicting Medical Outcomes using Artificial 
-##' Representative Trees with Uncertainty Quantification".
-##'
-##' This script reproduces Figure 5 based on benchmark experiment results.
+##' With this script the figure 5 from Kronziel et al. "Prediction Beyond Point 
+##' Estimates: Artificial Trees with Uncertainty" can be reproduced. 
 ##' It requires precomputed results from at least one dataset.
 ##' Run "01run_benchmark.R" beforehand to generate these results.
 ##'

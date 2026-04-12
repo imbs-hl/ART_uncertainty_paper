@@ -1,6 +1,6 @@
-##' With this script the figure 1 from Kronziel et al. "Predicting Medical 
-##' Outcomes using Artificial Representative Trees with Uncertainty 
-##' Quantification" can be reproduced. Given the prepared nhanes data set 
+##' With this script the figure 1 from Kronziel et al. "Prediction Beyond Point 
+##' Estimates: Artificial Trees with Uncertainty" can be reproduced.
+##' Given the prepared nhanes data set 
 ##' that you get after running 01prepare_data.R.
 #---------------------------------------
 ## Load required libraries

@@ -51,7 +51,7 @@ img_dir <- file.path(main_dir, "img")
 # (1)
 # Results produced manually via `02calculate_results.R`
 # Due to runtime reasons probs_quantiles = c(0.25,0.5,0.75) is used in default setting, you may change this
-data_imp <- read.csv(file.path("data", "results_nhanes_application.csv"))
+data_imp <- readRDS(file.path("data", "results_nhanes_application.rds"))
 # Lists of fitted regression trees
 regression_trees <- readRDS(file.path(proc_dir, "regression_trees_nhanes_application.rds"))
 probability_trees5.7 <- readRDS(file.path(proc_dir, "probability_trees5.7_nhanes_application.rds"))

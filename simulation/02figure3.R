@@ -72,14 +72,14 @@ results <- readRDS(file.path(proc_dir, "results_simulated_results.rds"))  %>%
                             TRUE ~ method))
 
 # Load stored trees and predicted probabilities
-regression_trees_imp <- readRDS(file.path("data","regression_trees_simulated_results.Rds"))
-probability_trees_imp <- readRDS(file.path("data","probability_trees_simulated_results.Rds"))
-pred_prob_imp <- readRDS(file.path("data", "pred_probabilities_simulated_results.Rds"))
+regression_trees_imp <- readRDS(file.path("data","regression_trees_simulated_results.rds"))
+probability_trees_imp <- readRDS(file.path("data","probability_trees_simulated_results.rds"))
+pred_prob_imp <- readRDS(file.path("data", "pred_probabilities_simulated_results.rds"))
 
 
 # 
 # # (2) Results from publication
-# results <- readRDS(file.path(proc_dir, "results_simulated_results_from_paper.Rds")) %>% 
+# results <- readRDS(file.path(proc_dir, "results_simulated_results_from_paper.rds")) %>% 
 #   # Create readable scenario labels
 #   mutate(scenario2 = case_when(setting == "Setting 1" ~ "large effects",
 #                                setting == "Setting 2" ~ "small effects",
@@ -98,9 +98,9 @@ pred_prob_imp <- readRDS(file.path("data", "pred_probabilities_simulated_results
 #                             TRUE ~ method))
 # 
 # # Load stored trees and predicted probabilities
-# regression_trees_imp <- readRDS(file.path("data","regression_trees_simulated_results_from_paper.Rds"))
-# probability_trees_imp <- readRDS(file.path("data","probability_trees_simulated_results_from_paper.Rds"))
-# pred_prob_imp <- readRDS(file.path("data", "pred_probabilities_simulated_results_from_paper.Rds"))
+# regression_trees_imp <- readRDS(file.path("data","regression_trees_simulated_results_from_paper.rds"))
+# probability_trees_imp <- readRDS(file.path("data","probability_trees_simulated_results_from_paper.rds"))
+# pred_prob_imp <- readRDS(file.path("data", "pred_probabilities_simulated_results_from_paper.rds"))
 
 
 

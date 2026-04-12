@@ -1,4 +1,4 @@
-With this Git repository, the simulations, benchmark experiments, and the NHANES application (including all figures) from the publication "Prediction Beyond Point Estimates: Artificial Trees with Uncertainty" can be fully reproduced.
+With this Git repository, the simulations, benchmark experiments, and the NHANES application (including all figures) from the publication "Beyond Point Prediction: Artificial Representative Trees with Uncertainty" can be fully reproduced.
 
 Please note that the analyses in the paper were performed using a high-throughput computing cluster.
 The system used consists of 11 nodes with 96 GB to 768 GB of memory and 12 to 64 CPUs per node.

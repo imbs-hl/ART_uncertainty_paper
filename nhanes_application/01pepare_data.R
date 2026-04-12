@@ -195,6 +195,7 @@ ind.rename <- which(!is.na(info.var$label))
 dat.pred.part <- dat.use[, info.var$varname[ind.rename]]
 colnames(dat.pred.part) <- info.var$label[ind.rename]
 
+# Remove duplicates
 dat.pred <- unique(
   cbind(
     dat.use[, c("SEQN", "smoking", "egfr", "non_hdl", "prediabetes")],
@@ -206,6 +207,7 @@ dat.pred <- unique(
 #------------------------------------------------------------------------------
 # Create complete-case dataset
 #------------------------------------------------------------------------------
+# Remove missing values
 dat.pred.complete <- na.omit(dat.pred)
 
 

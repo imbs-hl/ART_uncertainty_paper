@@ -26,7 +26,7 @@ library(pacman)
 # List of required packages
 packages <- c("batchtools", "checkmate", "data.table", "ggplot2", 
               "ranger", "bindata", "rpart", "plyr", "dplyr", 
-              "gridExtra", "DescTools", "caret", "cowplot")
+              "gridExtra", "DescTools", "caret", "cowplot", "this.path")
 
 # Load all packages
 p_load(packages, character.only = TRUE)
@@ -57,39 +57,41 @@ img_dir <- file.path(main_dir, "img")
 
 #---------------------------------------
 ## Load and preprocess benchmark results
+# ATTENTION!!!!
+warning("Please choose here which data you want to use. The default is the results you got from running 01run_benchmark.R")
+# if you want to use your simulated results you got from running 01run_simulations.R, use the code at (1) for data preparation
+# if you want to use the original data from the publication, please download them (see README for details), unpack them, and move them into the data folder. Use the code at (2) for data preparation
 
-data <- readRDS(file.path(proc_dir, "results_benchmark_experiments.rds")) %>% 
+# (1)
+data <- readRDS(file.path(proc_dir, "results_benchmark_experiments.rds")) %>%
   # Rename methods for better readability in plots
   mutate(method = case_when(method == "Regression ART + CPS" ~ "ART + CPS",
                             method == "Regression DT + CPS" ~ "DT + CPS",
                             method == "Regression ART + Probability ARTs" ~ "Mult. ARTs",
                             method == "Regression DT + Probability DTs" ~ "Mult. DTs",
-                            TRUE ~ method)) %>% 
-  filter(min.bucket == 150) %>% 
-  filter(metric == "splitting variables" | is.na(metric)) %>% 
+                            TRUE ~ method)) %>%
+  filter(min.bucket == 150) %>%
+  filter(metric == "splitting variables" | is.na(metric)) %>%
   # Filter parameter settings (reduced configuration for runtime reasons)
   # Use quantiles (instead of all split points) for ART + CPS
-  filter(probs_quantiles == "0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9" & method == "ART + CPS" | 
-           probs_quantiles == "0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9" & method == "Mult. ARTs" | 
+  filter(probs_quantiles == "0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9" & method == "ART + CPS" |
+           probs_quantiles == "0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9" & method == "Mult. ARTs" |
            is.na(probs_quantiles))
 
-# if you want to use the original data from the publication, please download them (see README for details), unpack them, and move them into the data folder: 
-# 
-# data from publication
-#
-# data <- readRDS(file.path(proc_dir, "results_benchmark_experiments__benchmark_results_from_paper.rds")) %>% 
+# (2)
+# data <- readRDS(file.path(proc_dir, "results_benchmark_results_from_paper.rds")) %>%
 #   # Rename methods for better readability in plots
 #   mutate(method = case_when(method == "Regression ART + CPS" ~ "ART + CPS",
 #                             method == "Regression DT + CPS" ~ "DT + CPS",
 #                             method == "Regression ART + Probability ARTs" ~ "Mult. ARTs",
 #                             method == "Regression DT + Probability DTs" ~ "Mult. DTs",
-#                             TRUE ~ method)) %>% 
-#   filter(min.bucket == 150) %>% 
-#   filter(metric == "splitting variables" | is.na(metric)) %>% 
+#                             TRUE ~ method)) %>%
+#   filter(min.bucket == 150) %>%
+#   filter(metric == "splitting variables" | is.na(metric)) %>%
 #   # Filter parameter settings (reduced configuration for runtime reasons)
 #   # Use quantiles (instead of all split points) for ART + CPS
-#   filter(probs_quantiles == "" & method == "ART + CPS" | 
-#            probs_quantiles == "0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9" & method == "Mult. ARTs" | 
+#   filter(probs_quantiles == "" & method == "ART + CPS" |
+#            probs_quantiles == "0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9" & method == "Mult. ARTs" |
 #            is.na(probs_quantiles))
 
 
@@ -193,7 +195,7 @@ plot_width
 
 prediction_accuracy <- plot_grid(plot_rmse, plot_brier_score, plot_width, plot_coverage,
                                  labels = "AUTO",
-                                 rel_widths = c(1, 1, 1, 1),
+                                 rel_heights = c(1.5, 1.5, 1, 1),
                                  nrow = 4)
 
 prediction_accuracy

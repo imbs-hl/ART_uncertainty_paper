@@ -67,53 +67,39 @@ data_ext_dir <- file.path(main_dir, "external_data")
 
 #---------------------------------------
 ## Load and preprocess benchmark results
+# ATTENTION!!!!
+warning("Please choose here which data you want to use. The default is the results you got from running 01run_benchmark.R")
+# if you want to use your simulated results you got from running 01run_simulations.R, use the code at (1) for data preparation
+# if you want to use the original data from the publication, please download them (see README for details), unpack them, and move them into the data folder. Use the code at (2) for data preparation
 
-data <- readRDS(file.path(proc_dir, "results_benchmark_experiments.rds")) %>% 
-  
+# (1)
+data <- readRDS(file.path(proc_dir, "results_benchmark_experiments.rds")) %>%
   # Rename methods for better readability in plots
   mutate(method = case_when(method == "Regression ART + CPS" ~ "ART + CPS",
                             method == "Regression DT + CPS" ~ "DT + CPS",
                             method == "Regression ART + Probability ARTs" ~ "Mult. ARTs",
                             method == "Regression DT + Probability DTs" ~ "Mult. DTs",
-                            TRUE ~ method)) %>% 
-  
-  # Filter parameter settings (reduced configuration for runtime reasons)
-  filter(min.bucket == 150) %>% 
-  filter(metric == "splitting variables" | is.na(metric)) %>% 
-  
-  # Use quantiles (instead of all split points) for ART-based methods
-  filter(probs_quantiles == "0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9" & method == "ART + CPS" | 
-           probs_quantiles == "0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9" & method == "Mult. ARTs" | 
-           is.na(probs_quantiles))
+                            TRUE ~ method))
 
 # Load stored models and prediction probabilities
-regression_trees <- readRDS(file.path(proc_dir, "regression_trees_benchmark_experiments.Rds"))
-probability_trees <- readRDS(file.path(proc_dir, "probability_trees_benchmark_experiments.Rds"))
-pred_prob <- readRDS(file.path(proc_dir, "pred_probabilities_benchmark_experiments.Rds"))
+regression_trees <- readRDS(file.path(proc_dir, "regression_trees_benchmark_experiments.rds"))
+probability_trees <- readRDS(file.path(proc_dir, "probability_trees_benchmark_experiments.rds"))
+pred_prob <- readRDS(file.path(proc_dir, "pred_probabilities_benchmark_experiments.rds"))
 
-# if you want to use the original data from the publication, please download them (see README for details), unpack them, and move them into the data folder: 
-# 
-# data from publication
-#
-# data <- readRDS(file.path(proc_dir, "results_benchmark_experiments_benchmark_results_from_paper.rds")) %>% 
+# # (2)
+# warning("The files from the paper are very large, which is why it can take a long time just to load them on your local computer. We used the high-performance cluster for this.")
+# data <- readRDS(file.path(proc_dir, "results_benchmark_results_from_paper.rds")) %>%
 #   # Rename methods for better readability in plots
 #   mutate(method = case_when(method == "Regression ART + CPS" ~ "ART + CPS",
 #                             method == "Regression DT + CPS" ~ "DT + CPS",
 #                             method == "Regression ART + Probability ARTs" ~ "Mult. ARTs",
 #                             method == "Regression DT + Probability DTs" ~ "Mult. DTs",
-#                             TRUE ~ method)) %>% 
-#   filter(min.bucket == 150) %>% 
-#   filter(metric == "splitting variables" | is.na(metric)) %>% 
-#   # Filter parameter settings (reduced configuration for runtime reasons)
-#   # Use quantiles (instead of all split points) for ART + CPS
-#   filter(probs_quantiles == "" & method == "ART + CPS" | 
-#            probs_quantiles == "0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9" & method == "Mult. ARTs" | 
-#            is.na(probs_quantiles))
+#                             TRUE ~ method)) 
 # 
 # # Load stored models and prediction probabilities
-# regression_trees <- readRDS(file.path(proc_dir, "regression_trees_benchmark_experiments_benchmark_results_from_paper.Rds"))
-# probability_trees <- readRDS(file.path(proc_dir, "probability_trees_benchmark_experiments_benchmark_results_from_paper.Rds"))
-# pred_prob <- readRDS(file.path(proc_dir, "pred_probabilities_benchmark_experiments_benchmark_results_from_paper.Rds"))
+# regression_trees <- readRDS(file.path(proc_dir, "regression_trees_benchmark_results_from_paper.rds"))
+# probability_trees <- readRDS(file.path(proc_dir, "probability_trees_benchmark_results_from_paper.rds"))
+# pred_prob <- readRDS(file.path(proc_dir, "pred_probabilities_benchmark_results_from_paper.rds"))
 
 
 #---------------------------------------

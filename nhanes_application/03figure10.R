@@ -2,6 +2,7 @@
 ##' Estimates: Artificial Trees with Uncertainty" can be reproduced.  
 ##' Given some results from the nhanes application.
 ##' Run 02calculate_results.R to get such a data set and the used models. 
+##' You also need the prepared nhanes data set from 01prepare_data.R here. Please run this script first.
 #---------------------------------------
 ## Load required libraries
 
@@ -45,27 +46,26 @@ img_dir <- file.path(main_dir, "img")
 #------------------------------------------------------------------------------
 # Load and prepare results data
 #------------------------------------------------------------------------------
-# Choose ONE of the following result sources
+# Choose ONE of the following result sources:
+
+# (1)
 # Results produced manually via `02calculate_results.R`
 # Due to runtime reasons probs_quantiles = c(0.25,0.5,0.75) is used in default setting, you may change this
-data_imp <- readRDS(file.path(proc_dir, "results_nhanes_application.rds")) %>%
-  filter(probs_quantiles == "0.25,0.5,0.75" | is.na(probs_quantiles)) # in Paper no quantiles were used, we used them here due to runtime
-
-# Harmonize method names and apply filtering consistent with the paper
-data <- data_imp %>%
-  mutate(
-    method = case_when(
-      method == "Regression ART + CPS" ~ "ART + CPS",
-      method == "Regression DT + CPS"  ~ "DT + CPS",
-      method == "Regression ART + Probability ARTs" ~ "Mult. ARTs",
-      method == "Regression DT + Probability DTs"  ~ "Mult. DTs",
-      TRUE ~ method
-    )
-  ) 
-
-
+data <- read.csv(file.path("data", "results_nhanes_application.csv"))
 # Lists of fitted regression trees
 regression_trees <- readRDS(file.path(proc_dir, "regression_trees_nhanes_application.rds"))
+
+# Node-level probability tables from RF for methods with CPS
+pred_prob <- readRDS(file.path(proc_dir, "pred_probabilities_nhanes_application.rds"))
+
+# (2)
+# # Results used in the paper
+# data <- read.csv(file.path("data", "results_nhanes_application_results_from_paper.csv"))
+# # Lists of fitted regression trees
+# regression_trees <- readRDS(file.path(proc_dir, "regression_trees_nhanes_application_results_from_paper.rds"))
+# # Node-level probability tables from RF for methods with CPS
+# pred_prob <- readRDS(file.path(proc_dir, "pred_probabilities_nhanes_application_results_from_paper.rds"))
+
 
 # Load preprocessed NHANES dataset
 nhanes_data_imp <- read.csv(file.path("data", "nhanes_prepandemic_complete.csv"))
@@ -167,8 +167,8 @@ usage_melt_art <- reshape2::melt(
 #------------------------------------------------------------------------------
 # Step 2: Variable usage for Random Forests
 #------------------------------------------------------------------------------
-rf_ids <- which(data_imp$method == "RF")
-rf_usage <- data_imp[rf_ids, ]
+rf_ids <- which(data$method == "RF")
+rf_usage <- data[rf_ids, ]
 
 rf_usage_avg <- rf_usage[, c(1:2, 7, 26:35)] %>%
   group_by(method, metric, min.bucket, repitition) %>%

@@ -48,14 +48,17 @@ img_dir <- file.path(main_dir, "img")
 # Load and prepare results data
 #------------------------------------------------------------------------------
 # Choose ONE of the following result files:
-# # Results used in the paper
-# data_imp <- readRDS(file.path("data", "registry_art_cps_df_paper.rds")) %>%
-#   filter(probs_quantiles == "" | is.na(probs_quantiles))
 
+# (1)
 # Results produced manually via `02calculate_results.R`
 # Due to runtime reasons probs_quantiles = c(0.25,0.5,0.75) is used in default setting, you may change this
-data_imp <- readRDS(file.path("data", "registry_art_cps_df.rds")) %>%
+data_imp <- read.csv(file.path("data", "results_nhanes_application.csv")) %>%
   filter(probs_quantiles == "0.25,0.5,0.75" | is.na(probs_quantiles))
+
+# (2)
+# # Results used in the paper
+# data_imp <- read.csv(file.path("data", "results_nhanes_application_results_from_paper.csv")) %>%
+#   filter(probs_quantiles == "" | is.na(probs_quantiles))
 
 
 # Harmonize method names and apply paper-consistent filtering

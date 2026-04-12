@@ -2,6 +2,7 @@
 ##' Estimates: Artificial Trees with Uncertainty" can be reproduced. 
 ##' Given some results from the nhanes application.
 ##' Run 02calculate_results.R to get such a data set and the used models. 
+##' You also need the prepared nhanes data set from 01prepare_data.R here. Please run this script first.
 #---------------------------------------
 ## Load required libraries
 
@@ -45,11 +46,34 @@ img_dir <- file.path(main_dir, "img")
 #------------------------------------------------------------------------------
 # Load and prepare results data
 #------------------------------------------------------------------------------
-# Choose ONE of the following result sources
+# Choose ONE of the following result sources:
+
+# (1)
 # Results produced manually via `02calculate_results.R`
 # Due to runtime reasons probs_quantiles = c(0.25,0.5,0.75) is used in default setting, you may change this
-data_imp <- readRDS(file.path(proc_dir, "results_nhanes_application.rds")) %>%
-  filter(probs_quantiles == "0.25,0.5,0.75" | is.na(probs_quantiles)) # in Paper no quantiles were used, we used them here due to runtime
+data_imp <- read.csv(file.path("data", "results_nhanes_application.csv"))
+# Lists of fitted regression trees
+regression_trees <- readRDS(file.path(proc_dir, "regression_trees_nhanes_application.rds"))
+probability_trees5.7 <- readRDS(file.path(proc_dir, "probability_trees5.7_nhanes_application.rds"))
+probability_trees6.5 <- readRDS(file.path(proc_dir, "probability_trees6.5_nhanes_application.rds"))
+
+# Node-level probability tables from RF for methods with CPS
+pred_prob <- readRDS(file.path(proc_dir, "pred_probabilities_nhanes_application.rds"))
+
+# (2)
+# # Results used in the paper
+# data_imp <- read.csv(file.path("data", "results_nhanes_application_results_from_paper.csv"))
+# 
+# # Lists of fitted regression trees
+# regression_trees <- readRDS(file.path(proc_dir, "regression_trees_nhanes_application_results_from_paper.rds"))
+# probability_trees5.7 <- readRDS(file.path(proc_dir, "probability_trees5.7_nhanes_application_results_from_paper.rds"))
+# probability_trees6.5 <- readRDS(file.path(proc_dir, "probability_trees6.5_nhanes_application_results_from_paper.rds"))
+# 
+# # Node-level probability tables from RF for methods with CPS
+# pred_prob <- readRDS(file.path(proc_dir, "pred_probabilities_nhanes_application_results_from_paper.rds"))
+
+
+
 
 # Harmonize method names and apply filtering consistent with the paper
 data <- data_imp %>%
@@ -61,17 +85,7 @@ data <- data_imp %>%
       method == "Regression DT + Probability DTs"  ~ "Mult. DTs",
       TRUE ~ method
     )
-  ) %>%
-  filter(min.bucket == 150) %>%
-  filter(metric == "splitting variables" | is.na(metric))
-
-# Lists of fitted regression trees
-regression_trees <- readRDS(file.path(proc_dir, "regression_trees_nhanes_application.rds"))
-probability_trees5.7 <- readRDS(file.path(proc_dir, "probability_trees5.7_nhanes_application.rds"))
-probability_trees6.5 <- readRDS(file.path(proc_dir, "probability_trees6.5_nhanes_application.rds"))
-
-# Node-level probability tables from RF for methods with CPS
-pred_prob <- readRDS(file.path(proc_dir, "pred_probabilities_nhanes_application.rds"))
+  )
 
 #------------------------------------------------------------------------------
 # Load NHANES data used for stability evaluation
@@ -109,7 +123,7 @@ dist_setting <- data.frame(method = NA, metric = NA,
                            dist_pred6.5 = NA, dist_sv6.5 = NA)
 
 # Loop over methods and datasets
-for(method in unique(data$method)){
+for(method in c("ART + CPS", "DT + CPS", "Mult. DTs", "Mult. ARTs")){
     
     # Select corresponding results
     ids_dataset_name <- which(data$method == method)
@@ -179,10 +193,10 @@ for(method in unique(data$method)){
         
       } else {
         
-        models_pred5.7 <- lapply(probability_trees5.7_setting_i, function(x){
+        models_pred5.7 <- lapply(trees5.7_setting_i, function(x){
           predict(x, data = test_data_setting, predict.all = TRUE)$predictions[,2,1]
         }) %>% bind_cols()
-        models_pred6.5 <- lapply(probability_trees6.5_setting_i, function(x){
+        models_pred6.5 <- lapply(trees6.5_setting_i, function(x){
           predict(x, data = test_data_setting, predict.all = TRUE)$predictions[,2,1]
         }) %>% bind_cols()
         

@@ -9,7 +9,7 @@ Detailed instructions for the simulations, benchmark experiments, and the NHANES
 Each folder contains a dedicated README with step-by-step guidance.
 The figures 1 and 7-10 are build based on the nhanes data, the figures 2 and 3 based on the simulations, and the figures 4-6 based on the benchmark experiments.
 
-If you would like to use the original data from the paper, please download it from https://doi.org/10.5281/zenodo.8308234 and place it in the corresponding data folder.
+If you would like to use the original data from the paper, please download it from https://doi.org/10.5281/zenodo.19467860 and place it in the corresponding data folder.
 
 Clone this repository using: git clone https://github.com/imbs-hl/ART_uncertainty_paper
 

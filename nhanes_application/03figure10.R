@@ -61,6 +61,9 @@ pred_prob <- readRDS(file.path(proc_dir, "pred_probabilities_nhanes_application.
 # (2)
 # # Results used in the paper
 # data <- read.csv(file.path("data", "results_nhanes_application_results_from_paper.csv"))
+# # Calculated variable usage from RF, seperatly saved in paper
+# var_usage_rf <- read.csv(file.path("data", "variable_usage_rf_results_from_paper.csv"))
+# data <- bind_rows(data, var_usage_rf)
 # # Lists of fitted regression trees
 # regression_trees <- readRDS(file.path(proc_dir, "regression_trees_nhanes_application_results_from_paper.rds"))
 # # Node-level probability tables from RF for methods with CPS

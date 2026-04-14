@@ -48,7 +48,7 @@ img_dir <- file.path(main_dir, "img")
 #------------------------------------------------------------------------------
 # Choose ONE of the following result sources:
 
-# (1)
+# # (1)
 # Results produced manually via `02calculate_results.R`
 # Due to runtime reasons probs_quantiles = c(0.25,0.5,0.75) is used in default setting, you may change this
 data <- readRDS(file.path("data", "results_nhanes_application.rds"))

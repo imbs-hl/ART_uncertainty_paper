@@ -24,6 +24,7 @@ p_load(packages, character.only = TRUE)
 # Load timbR package (from GitHub if not installed)
 if("timbR" %in% installed.packages()){
   library(timbR)
+  warning("Please check, if timbR with at least version 3.3 is installed.")
 } else {
   devtools::install_github("imbs-hl/timbR", "master")
   library(timbR)

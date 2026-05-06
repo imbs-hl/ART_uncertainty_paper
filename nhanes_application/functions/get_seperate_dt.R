@@ -45,7 +45,7 @@ get_seperate_dt <- function(data, instance, min.bucket = 0, ...){
   
   # Train probability DT for prediabetes (>= 5.7)
   train_data_5.7 <- train_data %>%
-    mutate(glycohemoglobin = ifelse(glycohemoglobin >= 5.7, 1, 0))
+    mutate(glycohemoglobin = as.factor(ifelse(glycohemoglobin >= 5.7, 1, 0)))
   
   probability_tree5.7 <- ranger(
     glycohemoglobin ~ .,
@@ -60,7 +60,7 @@ get_seperate_dt <- function(data, instance, min.bucket = 0, ...){
   
   # Train probability DT for diabetes (>= 6.5)
   train_data_6.5 <- train_data %>%
-    mutate(glycohemoglobin = ifelse(glycohemoglobin >= 6.5, 1, 0))
+    mutate(glycohemoglobin = as.factor(ifelse(glycohemoglobin >= 6.5, 1, 0)))
   
   probability_tree6.5 <- ranger(
     glycohemoglobin ~ .,

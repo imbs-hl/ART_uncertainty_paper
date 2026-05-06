@@ -54,7 +54,7 @@ get_seperate_art <- function(data, instance, metric, probs_quantiles, epsilon, m
   y_test_pred <- predict(art_regr, test_data)$predictions
   
   # Build probability ART (for threshold outcome, e.g., y >= 0.5)
-  train_data_0.5 <- train_data %>% mutate(y = ifelse(y >= 0.5, 1, 0))
+  train_data_0.5 <- train_data %>% mutate(y = as.factor(ifelse(y >= 0.5, 1, 0)))
   probability_tree <- generate_tree(
     rf = rf_prob0.5, metric = metric, train_data = train_data_0.5, test_data = train_data_0.5, 
     dependent_varname = "y", probs_quantiles = probs_quantiles, min.bucket=min.bucket

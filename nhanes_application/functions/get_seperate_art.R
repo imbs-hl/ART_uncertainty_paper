@@ -48,7 +48,7 @@ get_seperate_art <- function(data, instance, metric, probs_quantiles, epsilon, m
   
   # Train probability ART for prediabetes (>= 5.7)
   train_data_5.7 <- train_data %>%
-    mutate(glycohemoglobin = ifelse(glycohemoglobin >= 5.7, 1, 0))
+    mutate(glycohemoglobin = as.factor(ifelse(glycohemoglobin >= 5.7, 1, 0)))
   
   probability_tree5.7 <- generate_tree(
     rf = rf_prob5.7,
@@ -62,7 +62,7 @@ get_seperate_art <- function(data, instance, metric, probs_quantiles, epsilon, m
   
   # Train probability ART for diabetes (>= 6.5)
   train_data_6.5 <- train_data %>%
-    mutate(glycohemoglobin = ifelse(glycohemoglobin >= 6.5, 1, 0))
+    mutate(glycohemoglobin = as.factor(ifelse(glycohemoglobin >= 6.5, 1, 0)))
   
   probability_tree6.5 <- generate_tree(
     rf = rf_prob6.5,

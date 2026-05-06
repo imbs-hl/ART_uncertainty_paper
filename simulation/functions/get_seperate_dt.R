@@ -41,7 +41,7 @@ get_seperate_dt <- function(data, instance, min.bucket = 0, ...){
   pred_regr_art <- predict(art_regr, test_data)$predictions
   
   # Build probability DT for threshold outcome (y >= 0.5)
-  train_data_0.5 <- train_data %>% mutate(y = ifelse(y >= 0.5, 1, 0))
+  train_data_0.5 <- train_data %>% mutate(y = as.factor(ifelse(y >= 0.5, 1, 0)))
   
   probability_tree <- ranger(y ~ ., data = train_data_0.5, 
                              min.bucket = min.bucket, 

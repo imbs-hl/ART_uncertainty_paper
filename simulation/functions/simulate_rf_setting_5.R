@@ -72,7 +72,7 @@ simulate_rf_setting_5 <- function(data, n_test, n_val, p, p_eff_bin, p_eff_con, 
   
   # prob RF
   train_data_0.5 <- train_dat %>% 
-    mutate(y = ifelse(y>=0.5,1,0))
+    mutate(y = as.factor(ifelse(y >= 0.5, 1, 0)))
   rf_prob0.5 <- ranger(y~., data = train_data_0.5, min.node.size = min_node_size, probability = TRUE)
   
   

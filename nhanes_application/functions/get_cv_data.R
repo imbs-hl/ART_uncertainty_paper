@@ -57,7 +57,7 @@ get_cv_data <- function(data, current_fold, num_folds, repitition, ...){
   
   # Probability RF for prediabetes (>= 5.7)
   train_data_5.7 <- train_data_i %>% 
-    mutate(glycohemoglobin = ifelse(glycohemoglobin >= 5.7, 1, 0))
+    mutate(glycohemoglobin = as.factor(ifelse(glycohemoglobin >= 5.7, 1, 0)))
   
   rf_prob5.7 <- ranger(
     glycohemoglobin ~ .,
@@ -68,7 +68,7 @@ get_cv_data <- function(data, current_fold, num_folds, repitition, ...){
   
   # Probability RF for diabetes (>= 6.5)
   train_data_6.5 <- train_data_i %>% 
-    mutate(glycohemoglobin = ifelse(glycohemoglobin >= 6.5, 1, 0))
+    mutate(glycohemoglobin = as.factor(ifelse(glycohemoglobin >= 6.5, 1, 0)))
   
   rf_prob6.5 <- ranger(
     glycohemoglobin ~ .,

@@ -166,7 +166,7 @@ get_cv_data <- function(data, current_fold, num_folds, repitition, dataset_name,
   
   # Train probability random forest (binary outcome y >= 0.5)
   train_data_0.5 <- train_data_i %>% 
-    mutate(y = ifelse(y >= 0.5, 1, 0))
+    mutate(y = as.factor(ifelse(y >= 0.5, 1, 0)))
   
   rf_prob0.5 <- ranger(y ~ ., data = train_data_0.5, 
                        min.node.size = (n_train_i * 0.1), 
